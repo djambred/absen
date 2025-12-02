@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas import UserRegister, UserLogin, UserResponse, TokenResponse
+from app.schemas import UserRegister, UserLogin, UserResponse, LoginResponse
 from app.services import AuthService
 from app.utils import verify_token
 
@@ -20,7 +20,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     new_user = AuthService.register(db, user_data)
     return new_user
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=LoginResponse)
 def login(credentials: UserLogin, db: Session = Depends(get_db)):
     """
     Login user dan dapatkan JWT token
