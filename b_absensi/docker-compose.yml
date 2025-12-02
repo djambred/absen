@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  db:
+    image: mariadb:latest
+    container_name: absensi_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD:-password}
+      MYSQL_DATABASE: ${DATABASE_NAME:-absensi_db}
+      MYSQL_USER: ${DATABASE_USER:-absensi_user}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-password}
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "13306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - absensi_network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # FastAPI Application Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: absensi_api
+    environment:
+      DATABASE_USER: ${DATABASE_USER:-absensi_user}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-password}
+      DATABASE_HOST: db
+      DATABASE_PORT: 3306
+      DATABASE_NAME: ${DATABASE_NAME:-absensi_db}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      APP_ENV: ${APP_ENV:-development}
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    networks:
+      - absensi_network
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  absensi_network:
+    driver: bridge
