@@ -2,12 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
 from app.routes import auth, absensi
-from app.seed_data import create_sample_users
+
+# Import models to ensure they are registered with SQLAlchemy
+from app.models import User, Attendance, Leave
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
-# Create sample users on startup
+# Import and create sample users after tables are created
+from app.seed_data import create_sample_users
 create_sample_users()
 
 app = FastAPI(
