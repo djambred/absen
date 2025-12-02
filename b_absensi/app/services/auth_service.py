@@ -51,7 +51,17 @@ class AuthService:
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
-            "token_type": "bearer"
+            "token_type": "bearer",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "nip": user.nip,
+                "role": user.role,
+                "department": user.department,
+                "is_active": user.is_active,
+                "created_at": user.created_at
+            }
         }
     
     @staticmethod

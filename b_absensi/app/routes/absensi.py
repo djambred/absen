@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas import AttendanceCheckIn, AttendanceCheckOut, AttendanceResponse, AttendanceHistory
+from app.schemas import AttendanceResponse, AttendanceHistory
 from app.models import Attendance
 from app.services import LocationService
 from app.middleware.auth_middleware import get_current_user
@@ -31,14 +31,16 @@ def calculate_required_checkout(check_in_time: datetime) -> datetime:
 
 @router.post("/check-in", response_model=AttendanceResponse, status_code=status.HTTP_201_CREATED)
 async def check_in(
-    data: AttendanceCheckIn,
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    location: str = Form(...),
     photo: UploadFile = File(...),
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Check-in with GPS validation and time rules"""
     # Validate location
-    location_check = LocationService.validate_location(data.latitude, data.longitude)
+    location_check = LocationService.validate_location(latitude, longitude)
     
     if not location_check['valid']:
         # Get nearest location
@@ -65,9 +67,9 @@ async def check_in(
     attendance = Attendance(
         user_id=current_user.id,
         check_in_time=now,
-        check_in_latitude=data.latitude,
-        check_in_longitude=data.longitude,
-        check_in_location_name=location_check['location'],
+        check_in_latitude=latitude,
+        check_in_longitude=longitude,
+        check_in_location=location_check['location'],
         check_in_photo_url=photo_path,
         required_checkout_time=required_checkout,
         status="checked_in"
@@ -81,7 +83,9 @@ async def check_in(
 
 @router.post("/check-out", response_model=AttendanceResponse)
 async def check_out(
-    data: AttendanceCheckOut,
+    latitude: float = Form(...),
+    longitude: float = Form(...),
+    location: str = Form(...),
     photo: UploadFile = File(...),
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -102,10 +106,10 @@ async def check_out(
         )
     
     # Validate location
-    location_check = LocationService.validate_location(data.latitude, data.longitude)
+    location_check = LocationService.validate_location(latitude, longitude)
     
     if not location_check['valid']:
-        nearest = LocationService.get_nearest_location(data.latitude, data.longitude)
+        nearest = LocationService.get_nearest_location(latitude, longitude)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Lokasi tidak valid. Lokasi terdekat: {nearest['name']} ({nearest['distance']:.0f}m)"
@@ -122,9 +126,9 @@ async def check_out(
     
     # Update attendance
     attendance.check_out_time = now
-    attendance.check_out_latitude = data.latitude
-    attendance.check_out_longitude = data.longitude
-    attendance.check_out_location_name = location_check['location']
+    attendance.check_out_latitude = latitude
+    attendance.check_out_longitude = longitude
+    attendance.check_out_location = location_check['location']
     attendance.check_out_photo_url = photo_path
     attendance.status = "checked_out"
     
@@ -153,7 +157,7 @@ def get_today_attendance(
     
     return attendance
 
-@router.get("/history", response_model=list[AttendanceHistory])
+@router.get("/history")
 def get_attendance_history(
     limit: int = 30,
     current_user = Depends(get_current_user),
@@ -164,4 +168,4 @@ def get_attendance_history(
         Attendance.user_id == current_user.id
     ).order_by(Attendance.check_in_time.desc()).limit(limit).all()
     
-    return attendances
+    return {"data": attendances}
