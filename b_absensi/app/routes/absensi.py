@@ -40,9 +40,9 @@ async def check_in(
 ):
     """Check-in with GPS validation and time rules"""
     # Validate location
-    location_check = LocationService.validate_location(latitude, longitude)
+    is_valid, location_name = LocationService.validate_location(latitude, longitude)
     
-    if not location_check['valid']:
+    if not is_valid:
         # Get nearest location
         nearest = LocationService.get_nearest_location(latitude, longitude)
         raise HTTPException(
@@ -108,9 +108,9 @@ async def check_out(
         )
     
     # Validate location
-    location_check = LocationService.validate_location(latitude, longitude)
+    is_valid, location_name = LocationService.validate_location(latitude, longitude)
     
-    if not location_check['valid']:
+    if not is_valid:
         nearest = LocationService.get_nearest_location(latitude, longitude)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
