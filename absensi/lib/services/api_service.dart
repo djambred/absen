@@ -123,17 +123,19 @@ class ApiService {
     required String photoPath,
   }) async {
     try {
+      final now = DateTime.now();
       final formData = FormData.fromMap({
         'latitude': latitude.toString(),
         'longitude': longitude.toString(),
         'location': location,
+        'timestamp': now.toIso8601String(),
         'photo': await MultipartFile.fromFile(
           photoPath,
           filename: 'photo.jpg',
         ),
       });
       
-      debugPrint('Check-in request: lat=$latitude, lng=$longitude, loc=$location');
+      debugPrint('Check-in request: lat=$latitude, lng=$longitude, loc=$location, time=$now');
       final response = await _dio.post('/attendance/check-in', data: formData);
       debugPrint('Check-in response: ${response.statusCode}');
       return Map<String, dynamic>.from(response.data);
@@ -157,17 +159,19 @@ class ApiService {
     required String photoPath,
   }) async {
     try {
+      final now = DateTime.now();
       final formData = FormData.fromMap({
         'latitude': latitude.toString(),
         'longitude': longitude.toString(),
         'location': location,
+        'timestamp': now.toIso8601String(),
         'photo': await MultipartFile.fromFile(
           photoPath,
           filename: 'photo.jpg',
         ),
       });
       
-      debugPrint('Check-out request: lat=$latitude, lng=$longitude, loc=$location');
+      debugPrint('Check-out request: lat=$latitude, lng=$longitude, loc=$location, time=$now');
       final response = await _dio.post('/attendance/check-out', data: formData);
       debugPrint('Check-out response: ${response.statusCode}');
       return Map<String, dynamic>.from(response.data);

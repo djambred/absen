@@ -32,6 +32,7 @@ async def check_in(
     longitude: float = Form(...),
     location: str = Form(...),
     photo: UploadFile = File(...),
+    timestamp: str = Form(None),  # Optional timestamp from client
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -47,8 +48,16 @@ async def check_in(
             detail=f"Lokasi tidak valid. Lokasi terdekat: {nearest['name']} ({nearest['distance']:.0f}m)"
         )
     
+    # Use client timestamp if provided, otherwise use server time
+    if timestamp:
+        try:
+            now = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        except:
+            now = datetime.now()
+    else:
+        now = datetime.now()
+    
     # Calculate required checkout time
-    now = datetime.now()
     required_checkout = calculate_required_checkout(now)
     
     # Save photo with user folder and formatted filename
@@ -86,12 +95,22 @@ async def check_out(
     longitude: float = Form(...),
     location: str = Form(...),
     photo: UploadFile = File(...),
+    timestamp: str = Form(None),  # Optional timestamp from client
     current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Check-out with GPS validation"""
+    # Use client timestamp if provided, otherwise use server time
+    if timestamp:
+        try:
+            now = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+        except:
+            now = datetime.now()
+    else:
+        now = datetime.now()
+    
     # Get today's attendance
-    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     attendance = db.query(Attendance).filter(
         Attendance.user_id == current_user.id,
         Attendance.check_in_time >= today_start,
@@ -115,7 +134,6 @@ async def check_out(
         )
     
     # Save photo with user folder and formatted filename
-    now = datetime.now()
     # Format: YYYY-MM-DD_HH-MM-SS_DayName_checkout.jpg
     day_name = now.strftime('%A')  # Monday, Tuesday, etc
     photo_filename = now.strftime(f'%Y-%m-%d_%H-%M-%S_{day_name}_checkout.jpg')
