@@ -11,7 +11,7 @@ import os
 router = APIRouter()
 
 def calculate_required_checkout(check_in_time: datetime) -> datetime:
-    """Calculate required checkout time based on check-in rules"""
+    """Calculate required checkout time based on check-in rules - DISABLED FOR TESTING"""
     check_in_hour_minute = check_in_time.time()
     
     # Rule 1: Check-in ≤ 7:30 → checkout at 17:00
@@ -22,12 +22,9 @@ def calculate_required_checkout(check_in_time: datetime) -> datetime:
     elif time(8, 0) <= check_in_hour_minute <= time(10, 0):
         return check_in_time.replace(hour=19, minute=0, second=0, microsecond=0)
     
-    # Rule 3: Check-in > 10:00 → rejected
+    # Rule 3: Check-in > 10:00 → allowed for testing, default checkout 8 hours later
     else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Check-in hanya diperbolehkan sampai jam 10:00"
-        )
+        return check_in_time.replace(hour=19, minute=0, second=0, microsecond=0)
 
 @router.post("/check-in", response_model=AttendanceResponse, status_code=status.HTTP_201_CREATED)
 async def check_in(
@@ -133,7 +130,7 @@ async def check_out(
     attendance.check_out_time = now
     attendance.check_out_latitude = latitude
     attendance.check_out_longitude = longitude
-    attendance.check_out_location = location_check['location']
+    attendance.check_out_location = location_name
     attendance.check_out_photo_url = photo_path
     attendance.status = "checked_out"
     

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/attendance_provider.dart';
+import 'providers/location_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/secure_storage_service.dart';
 
 void main() async {
@@ -21,11 +23,12 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, _) {
           return MaterialApp(
-            title: 'Absensi MNC',
+            title: 'Absen MNC University',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
@@ -38,9 +41,11 @@ class MyApp extends StatelessWidget {
                 elevation: 0,
               ),
             ),
-            home: authProvider.isAuthenticated 
-                ? const HomeScreen() 
-                : const LoginScreen(),
+            home: SplashScreen(
+              child: authProvider.isAuthenticated 
+                  ? const HomeScreen() 
+                  : const LoginScreen(),
+            ),
           );
         },
       ),
