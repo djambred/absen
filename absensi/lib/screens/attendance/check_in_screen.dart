@@ -79,7 +79,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
       _showError('Silakan ambil foto terlebih dahulu');
       return;
     }
-
+    
     if (!_locationProvider.isValidLocation) {
       _showError('Lokasi Anda tidak valid untuk absensi');
       return;
@@ -116,11 +116,14 @@ class _CheckInScreenState extends State<CheckInScreen> {
               widget.isCheckIn ? 'Check-in berhasil!' : 'Check-out berhasil!',
             ),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
     } catch (e) {
-      _showError(e.toString());
+      final errorMessage = e.toString().replaceAll('Exception: ', '');
+      _showError('Gagal ${widget.isCheckIn ? "check-in" : "check-out"}: $errorMessage');
+      debugPrint('Submit error: $e');
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);
@@ -141,96 +144,489 @@ class _CheckInScreenState extends State<CheckInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(widget.isCheckIn ? 'Check In' : 'Check Out'),
+        title: Text(
+          widget.isCheckIn ? 'Check In' : 'Check Out',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
       ),
       body: _controller == null || !_controller!.value.isInitialized
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: _photoPath == null
-                      ? CameraPreview(_controller!)
-                      : Image.file(File(_photoPath!)),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.white,
-                  child: Column(
-                    children: [
-                      if (_locationProvider.isLoading)
-                        const CircularProgressIndicator()
-                      else if (_locationProvider.isValidLocation)
-                        Card(
-                          color: Colors.green.shade50,
-                          child: ListTile(
-                            leading: const Icon(Icons.location_on, color: Colors.green),
-                            title: Text(_locationProvider.locationCheck!.locationName),
-                            subtitle: Text(
-                              '${_locationProvider.locationCheck!.distance.toStringAsFixed(0)}m dari lokasi',
-                            ),
-                          ),
-                        )
-                      else
-                        Card(
-                          color: Colors.red.shade50,
-                          child: ListTile(
-                            leading: const Icon(Icons.location_off, color: Colors.red),
-                            title: const Text('Lokasi tidak valid'),
-                            subtitle: Text(
-                              _locationProvider.locationCheck?.message ?? 'Di luar jangkauan',
-                            ),
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Memuat kamera...',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            )
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Camera Preview - professional card style
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: SizedBox(
+                        height: 400,
+                        width: double.infinity,
+                        child: _photoPath == null
+                            ? Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  CameraPreview(_controller!),
+                                  Positioned(
+                                    top: 16,
+                                    left: 16,
+                                    right: 16,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withValues(alpha: 0.6),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.camera_alt,
+                                            color: Colors.white,
+                                            size: 18,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Posisikan wajah Anda di tengah',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Image.file(
+                                File(_photoPath!),
+                                fit: BoxFit.cover,
+                              ),
+                      ),
+                    ),
+                  ),
+                  // Location Status Section
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Status Lokasi',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                         ),
-                      const SizedBox(height: 16),
-                      if (_photoPath == null)
-                        ElevatedButton.icon(
-                          onPressed: _isProcessing ? null : _takePicture,
-                          icon: const Icon(Icons.camera_alt),
-                          label: const Text('Ambil Foto'),
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(50),
-                          ),
-                        )
-                      else
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _isProcessing
-                                    ? null
-                                    : () => setState(() => _photoPath = null),
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('Ulangi'),
-                              ),
+                        const SizedBox(height: 12),
+                        // Location Status
+                        if (_locationProvider.isLoading)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: _isProcessing ||
-                                        !_locationProvider.isValidLocation
-                                    ? null
-                                    : _submit,
-                                icon: _isProcessing
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Mengecek Lokasi GPS',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
                                         ),
-                                      )
-                                    : const Icon(Icons.check),
-                                label: Text(
-                                  widget.isCheckIn ? 'Check In' : 'Check Out',
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Mohon tunggu beberapa saat...',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (_locationProvider.isValidLocation)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.green.shade50, Colors.green.shade100],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.green.shade300),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_circle_outline,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Lokasi Valid',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _locationProvider.locationCheck!.locationName,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${_locationProvider.locationCheck!.distance.toStringAsFixed(0)}m dari titik absensi',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.red.shade50, Colors.red.shade100],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.red.shade300),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: const Icon(
+                                            Icons.location_off,
+                                            color: Colors.white,
+                                            size: 28,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                'Lokasi Tidak Valid',
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                _locationProvider.locationCheck?.message ?? 
+                                                'Anda berada di luar area absensi',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey[700],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton.icon(
+                                        onPressed: _checkLocation,
+                                        icon: const Icon(Icons.refresh),
+                                        label: const Text('Cek Ulang Lokasi'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                          side: const BorderSide(color: Colors.red),
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              if (_locationProvider.locationCheck != null) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.amber.shade300),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(Icons.info_outline, color: Colors.amber[800]),
+                                          const SizedBox(width: 8),
+                                          const Text(
+                                            'Lokasi Terdekat',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: Colors.amber,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Icon(
+                                              Icons.place,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  _locationProvider.locationCheck!.locationName,
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '${_locationProvider.locationCheck!.distance.toStringAsFixed(0)} meter dari posisi Anda',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[700],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Row(
+                                          children: [
+                                            Icon(Icons.directions_walk, size: 16, color: Colors.grey),
+                                            SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Silakan menuju lokasi tersebut untuk melakukan absensi',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        const SizedBox(height: 24),
+                        // Action Buttons
+                        if (_photoPath == null)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton.icon(
+                              onPressed: _isProcessing ? null : _takePicture,
+                              icon: const Icon(Icons.camera_alt, size: 24),
+                              label: const Text(
+                                'Ambil Foto Selfie',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 2,
+                              ),
                             ),
-                          ],
-                        ),
-                    ],
+                          )
+                        else
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: SizedBox(
+                                  height: 56,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _isProcessing
+                                        ? null
+                                        : () => setState(() => _photoPath = null),
+                                    icon: const Icon(Icons.refresh, size: 22),
+                                    label: const Text(
+                                      'Ulangi',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.grey[700],
+                                      side: BorderSide(color: Colors.grey.shade400),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 3,
+                                child: SizedBox(
+                                  height: 56,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _isProcessing ||
+                                            !_locationProvider.isValidLocation
+                                        ? null
+                                        : _submit,
+                                    icon: _isProcessing
+                                        ? const SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Icon(Icons.check_circle, size: 22),
+                                    label: Text(
+                                      widget.isCheckIn ? 'Check In' : 'Check Out',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: widget.isCheckIn 
+                                          ? Colors.green 
+                                          : Colors.orange,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
     );
   }

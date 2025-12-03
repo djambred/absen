@@ -24,7 +24,10 @@ RUN pip install --upgrade pip && \
 COPY . .
 
 # Create non-root user for security
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app && \
+    mkdir -p /app/uploads/photos && \
+    chown -R appuser:appuser /app/uploads
 USER appuser
 
 # Expose port

@@ -49,12 +49,14 @@ class AuthProvider with ChangeNotifier {
         key: AppConstants.keyRefreshToken,
         value: response['refresh_token'],
       );
+      
+      final userData = response['user'] as Map<String, dynamic>;
       await _storage.write(
         key: AppConstants.keyUserId,
-        value: response['id'],
+        value: userData['id'],
       );
 
-      _user = User.fromJson(response);
+      _user = User.fromJson(userData);
       _isAuthenticated = true;
       _isLoading = false;
       notifyListeners();

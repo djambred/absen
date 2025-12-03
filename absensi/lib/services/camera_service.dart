@@ -13,8 +13,9 @@ class CameraService {
 
     final controller = CameraController(
       frontCamera,
-      ResolutionPreset.medium,
+      ResolutionPreset.high,
       enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.jpeg,
     );
 
     await controller.initialize();
@@ -29,8 +30,8 @@ class CameraService {
     final decodedImage = img.decodeImage(bytes);
     
     if (decodedImage != null) {
-      final resized = img.copyResize(decodedImage, width: 1024);
-      final compressed = img.encodeJpg(resized, quality: 85);
+      final resized = img.copyResize(decodedImage, width: 1920);
+      final compressed = img.encodeJpg(resized, quality: 90);
       
       final directory = await getTemporaryDirectory();
       final path = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.jpg';

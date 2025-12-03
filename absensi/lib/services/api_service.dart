@@ -27,9 +27,15 @@ class ApiService {
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+        debugPrint('Request: ${options.method} ${options.uri}');
         return handler.next(options);
       },
+      onResponse: (response, handler) {
+        debugPrint('Response: ${response.statusCode} from ${response.requestOptions.uri}');
+        return handler.next(response);
+      },
       onError: (DioException e, handler) async {
+        debugPrint('Error: ${e.response?.statusCode} - ${e.message}');
         if (e.response?.statusCode == 401) {
           final refreshed = await _refreshToken();
           if (refreshed) {
@@ -100,15 +106,32 @@ class ApiService {
     required String location,
     required String photoPath,
   }) async {
-    final formData = FormData.fromMap({
-      'latitude': latitude,
-      'longitude': longitude,
-      'location': location,
-      'photo': await MultipartFile.fromFile(photoPath),
-    });
-    
-    final response = await _dio.post('/attendance/check-in', data: formData);
-    return response.data;
+    try {
+      final formData = FormData.fromMap({
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
+        'location': location,
+        'photo': await MultipartFile.fromFile(
+          photoPath,
+          filename: 'photo.jpg',
+        ),
+      });
+      
+      debugPrint('Check-in request: lat=$latitude, lng=$longitude, loc=$location');
+      final response = await _dio.post('/attendance/check-in', data: formData);
+      debugPrint('Check-in response: ${response.statusCode}');
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      debugPrint('Check-in DioException: ${e.response?.statusCode} - ${e.response?.data}');
+      if (e.response?.data != null && e.response?.data is Map) {
+        final detail = e.response?.data['detail'];
+        throw Exception(detail ?? 'Gagal check-in');
+      }
+      throw Exception('Koneksi ke server gagal: ${e.message}');
+    } catch (e) {
+      debugPrint('Check-in error: $e');
+      rethrow;
+    }
   }
   
   Future<Map<String, dynamic>> checkOut({
@@ -117,20 +140,46 @@ class ApiService {
     required String location,
     required String photoPath,
   }) async {
-    final formData = FormData.fromMap({
-      'latitude': latitude,
-      'longitude': longitude,
-      'location': location,
-      'photo': await MultipartFile.fromFile(photoPath),
-    });
-    
-    final response = await _dio.post('/attendance/check-out', data: formData);
-    return response.data;
+    try {
+      final formData = FormData.fromMap({
+        'latitude': latitude.toString(),
+        'longitude': longitude.toString(),
+        'location': location,
+        'photo': await MultipartFile.fromFile(
+          photoPath,
+          filename: 'photo.jpg',
+        ),
+      });
+      
+      debugPrint('Check-out request: lat=$latitude, lng=$longitude, loc=$location');
+      final response = await _dio.post('/attendance/check-out', data: formData);
+      debugPrint('Check-out response: ${response.statusCode}');
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      debugPrint('Check-out DioException: ${e.response?.statusCode} - ${e.response?.data}');
+      if (e.response?.data != null && e.response?.data is Map) {
+        final detail = e.response?.data['detail'];
+        throw Exception(detail ?? 'Gagal check-out');
+      }
+      throw Exception('Koneksi ke server gagal: ${e.message}');
+    } catch (e) {
+      debugPrint('Check-out error: $e');
+      rethrow;
+    }
   }
   
   Future<Map<String, dynamic>?> getTodayAttendance() async {
-    final response = await _dio.get('/attendance/today');
-    return response.data;
+    try {
+      final response = await _dio.get('/attendance/today');
+      return response.data;
+    } on DioException catch (e) {
+      // 404 means no attendance today - not an error
+      if (e.response?.statusCode == 404) {
+        return null;
+      }
+      debugPrint('Get today attendance error: ${e.response?.statusCode} - ${e.response?.data}');
+      rethrow;
+    }
   }
   
   Future<List<dynamic>> getAttendanceHistory({

@@ -20,18 +20,21 @@ class LocationService {
   
   Future<Position> getCurrentLocation() async {
     if (!await isLocationServiceEnabled()) {
-      throw Exception('Location service is disabled. Please enable it.');
+      throw Exception('GPS tidak aktif. Silakan aktifkan GPS di pengaturan.');
     }
     
     if (!await isLocationPermissionGranted()) {
       final granted = await requestLocationPermission();
       if (!granted) {
-        throw Exception('Location permission denied.');
+        throw Exception('Izin lokasi ditolak. Silakan berikan izin di pengaturan aplikasi.');
       }
     }
     
+    // Use high accuracy for GPS without requiring WiFi
     return await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
+      forceAndroidLocationManager: true, // Force GPS even without WiFi
+      timeLimit: const Duration(seconds: 10),
     );
   }
   
