@@ -121,7 +121,7 @@ async def check_out(
     now = datetime.now()
     # Format: YYYY-MM-DD_HH-MM-SS_DayName_checkout.jpg
     day_name = now.strftime('%A')  # Monday, Tuesday, etc
-    photo_filename = now.strftime(f'%Y-%m-%d_%H-%M-%SS_{day_name}_checkout.jpg')
+    photo_filename = now.strftime(f'%Y-%m-%d_%H-%M-%S_{day_name}_checkout.jpg')
     user_photo_dir = os.path.join("uploads", "photos", str(current_user.id))
     os.makedirs(user_photo_dir, exist_ok=True)
     photo_path = os.path.join(user_photo_dir, photo_filename)
