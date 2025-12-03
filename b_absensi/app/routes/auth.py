@@ -47,3 +47,10 @@ def get_profile(token: str = None, db: Session = Depends(get_db)):
     user_id = verify_token(token)
     user = AuthService.get_user_by_id(db, user_id)
     return user
+
+@router.post("/logout")
+def logout():
+    """
+    Logout user (client-side only, hapus token di client)
+    """
+    return {"message": "Logout berhasil"}

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -18,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _canUseBiometric = false;
   bool _biometricEnabled = false;
-  bool _rememberMe = false;
 
   @override
   void initState() {
@@ -41,32 +41,59 @@ class _LoginScreenState extends State<LoginScreen> {
       _canUseBiometric = canUse;
       _biometricEnabled = isEnabled;
     });
-    
-    // Auto authenticate if biometric is enabled
-    if (_biometricEnabled && canUse) {
-      _handleBiometricLogin();
-    }
   }
 
   Future<void> _handleBiometricLogin() async {
-    final authenticated = await _biometricService.authenticate();
-    
-    if (authenticated) {
-      final credentials = await _biometricService.getSavedCredentials();
-      if (credentials != null && mounted) {
-        final authProvider = context.read<AuthProvider>();
-        try {
-          await authProvider.login(credentials['email']!, credentials['password']!);
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Login gagal: ${e.toString()}'),
-                backgroundColor: Colors.red,
-              ),
-            );
+    try {
+      final authenticated = await _biometricService.authenticate();
+      debugPrint('Biometric authentication result: $authenticated');
+      
+      if (authenticated) {
+        final credentials = await _biometricService.getSavedCredentials();
+        debugPrint('Retrieved credentials: ${credentials != null ? "Found" : "Not found"}');
+        
+        if (credentials != null && mounted) {
+          final authProvider = context.read<AuthProvider>();
+          try {
+            debugPrint('Attempting login with saved credentials');
+            await authProvider.login(credentials['email']!, credentials['password']!);
+            debugPrint('Login successful');
+          } catch (e) {
+            debugPrint('Login error: $e');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Login gagal: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           }
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kredensial tidak ditemukan. Silakan aktifkan biometrik di Profile.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
         }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verifikasi biometrik dibatalkan'),
+            backgroundColor: Colors.grey,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Biometric login error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -83,21 +110,34 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (success && mounted) {
-        // Save credentials if remember me is checked
-        if (_rememberMe && _canUseBiometric) {
-          await _biometricService.enableBiometric(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login berhasil!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
           );
         }
         // Navigation handled by main.dart
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Login gagal';
+        
+        if (e.toString().contains('401')) {
+          errorMessage = 'Email atau password salah';
+        } else if (e.toString().contains('DioException')) {
+          errorMessage = 'Tidak dapat terhubung ke server';
+        } else {
+          errorMessage = 'Login gagal: ${e.toString()}';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Login gagal: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -178,18 +218,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       border: const OutlineInputBorder(),
                     ),
-                  if (_canUseBiometric)
-                    CheckboxListTile(
-                      title: const Text('Ingat saya (Login dengan biometrik)'),
-                      value: _rememberMe,
-                      onChanged: (value) {
-                        setState(() {
-                          _rememberMe = value ?? false;
-                        });
-                      },
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Password harus diisi';
+                      }
+                      return null;
+                    },
+                  ),
                   const SizedBox(height: 24),
                   Consumer<AuthProvider>(
                     builder: (context, authProvider, _) {
@@ -220,14 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
-                  ],            child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text('Masuk'),
-                      );
-                    },
-                  ),
+                  ],
                 ],
               ),
             ),

@@ -3,9 +3,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 
 class SplashScreen extends StatefulWidget {
-  final Widget child;
+  final VoidCallback onComplete;
   
-  const SplashScreen({super.key, required this.child});
+  const SplashScreen({super.key, required this.onComplete});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -59,13 +59,11 @@ class _SplashScreenState extends State<SplashScreen> {
       _permissionsGranted = true;
     });
 
-    // Wait a bit before navigating
+    // Wait a bit before completing
     await Future.delayed(const Duration(milliseconds: 500));
     
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => widget.child),
-      );
+      widget.onComplete();
     }
   }
 

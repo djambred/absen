@@ -74,16 +74,32 @@ class ApiService {
   
   // Auth
   Future<Map<String, dynamic>> login(String email, String password) async {
-    final response = await _dio.post('/auth/login', data: {
-      'email': email,
-      'password': password,
-    });
-    final data = Map<String, dynamic>.from(response.data);
-    if (data['user'] != null) {
-      final user = data['user'];
-      data.addAll(user);
+    try {
+      debugPrint('Login attempt: $email');
+      final response = await _dio.post('/auth/login', data: {
+        'email': email,
+        'password': password,
+      });
+      debugPrint('Login response: ${response.statusCode}');
+      final data = Map<String, dynamic>.from(response.data);
+      if (data['user'] != null) {
+        final user = data['user'];
+        data.addAll(user);
+      }
+      return data;
+    } on DioException catch (e) {
+      debugPrint('Login DioException: ${e.response?.statusCode} - ${e.response?.data}');
+      if (e.response?.statusCode == 401) {
+        throw Exception('Email atau password salah');
+      } else if (e.response?.data != null && e.response?.data is Map) {
+        final detail = e.response?.data['detail'];
+        throw Exception(detail ?? 'Login gagal');
+      }
+      throw Exception('Tidak dapat terhubung ke server: ${e.message}');
+    } catch (e) {
+      debugPrint('Login error: $e');
+      rethrow;
     }
-    return data;
   }
   
   Future<Map<String, dynamic>> getProfile() async {

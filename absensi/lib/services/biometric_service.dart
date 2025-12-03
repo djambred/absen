@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -41,7 +42,7 @@ class BiometricService {
         ),
       );
     } on PlatformException catch (e) {
-      print('Biometric authentication error: $e');
+      debugPrint('Biometric authentication error: $e');
       return false;
     }
   }
@@ -57,9 +58,11 @@ class BiometricService {
     required String email,
     required String password,
   }) async {
+    debugPrint('Enabling biometric for email: $email');
     await _storage.write(key: _biometricEnabledKey, value: 'true');
     await _storage.write(key: _savedEmailKey, value: email);
     await _storage.write(key: _savedPasswordKey, value: password);
+    debugPrint('Biometric credentials saved successfully');
   }
   
   // Disable biometric login
@@ -73,6 +76,8 @@ class BiometricService {
   Future<Map<String, String>?> getSavedCredentials() async {
     final email = await _storage.read(key: _savedEmailKey);
     final password = await _storage.read(key: _savedPasswordKey);
+    
+    debugPrint('Getting saved credentials - Email: $email, Password exists: ${password != null}');
     
     if (email != null && password != null) {
       return {'email': email, 'password': password};

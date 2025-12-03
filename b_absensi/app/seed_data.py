@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 SAMPLE_USERS = [
     {
-        "email": "jefry@mnc.ac.id",
+        "email": "jefry@mncu.ac.id",
         "password": "password",
         "name": "Jefry",
         "nip": "J001",
@@ -20,7 +20,7 @@ SAMPLE_USERS = [
         "department": "Fakultas Ilmu Komputer"
     },
     {
-        "email": "dosen@mnc.ac.id",
+        "email": "dosen@mncu.ac.id",
         "password": "password123",
         "name": "Dr. Ahmad Dosen",
         "nip": "D001",
@@ -28,7 +28,7 @@ SAMPLE_USERS = [
         "department": "Fakultas Teknik"
     },
     {
-        "email": "karyawan@mnc.ac.id",
+        "email": "karyawan@mncu.ac.id",
         "password": "password123",
         "name": "Budi Karyawan",
         "nip": "K001",
@@ -36,7 +36,7 @@ SAMPLE_USERS = [
         "department": "IT Department"
     },
     {
-        "email": "staff@mnc.ac.id",
+        "email": "staff@mncu.ac.id",
         "password": "password123",
         "name": "Siti Staff",
         "nip": "S001",
@@ -44,7 +44,7 @@ SAMPLE_USERS = [
         "department": "HR Department"
     },
     {
-        "email": "admin@mnc.ac.id",
+        "email": "admin@mncu.ac.id",
         "password": "admin123",
         "name": "Admin MNC",
         "nip": "A001",

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/attendance_provider.dart';
-import '../attendance/check_in_screen.dart';
 import '../history/attendance_history_screen.dart';
 import 'package:intl/intl.dart';
 
@@ -31,34 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Absensi MNC'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Keluar'),
-                  content: const Text('Apakah Anda yakin ingin keluar?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Batal'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Keluar'),
-                    ),
-                  ],
-                ),
-              );
-
-              if (confirm == true && mounted) {
-                await authProvider.logout();
-              }
-            },
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => attendanceProvider.loadTodayAttendance(),
@@ -121,58 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            if (!attendanceProvider.hasCheckedIn)
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CheckInScreen(isCheckIn: true),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.login),
-                label: const Text('Check In'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                ),
-              )
-            else if (!attendanceProvider.hasCheckedOut)
-              ElevatedButton.icon(
-                onPressed: attendanceProvider.todayAttendance!.canCheckOut
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CheckInScreen(isCheckIn: false),
-                          ),
-                        );
-                      }
-                    : null,
-                icon: const Icon(Icons.logout),
-                label: Text(
-                  attendanceProvider.todayAttendance!.canCheckOut
-                      ? 'Check Out'
-                      : 'Belum Waktunya Check Out',
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                ),
-              )
-            else
-              const Card(
-                color: Colors.green,
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Center(
-                    child: Text(
-                      'Absensi Hari Ini Selesai',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: () {
                 Navigator.push(
