@@ -44,7 +44,7 @@ async def check_in(
     
     if not location_check['valid']:
         # Get nearest location
-        nearest = LocationService.get_nearest_location(data.latitude, data.longitude)
+        nearest = LocationService.get_nearest_location(latitude, longitude)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Lokasi tidak valid. Lokasi terdekat: {nearest['name']} ({nearest['distance']:.0f}m)"
@@ -54,11 +54,13 @@ async def check_in(
     now = datetime.now()
     required_checkout = calculate_required_checkout(now)
     
-    # Save photo
-    photo_dir = "uploads/photos"
-    os.makedirs(photo_dir, exist_ok=True)
-    photo_filename = f"{current_user.id}_{int(now.timestamp())}.jpg"
-    photo_path = os.path.join(photo_dir, photo_filename)
+    # Save photo with user folder and formatted filename
+    # Format: YYYY-MM-DD_HH-MM-SS_DayName_checkin.jpg
+    day_name = now.strftime('%A')  # Monday, Tuesday, etc
+    photo_filename = now.strftime(f'%Y-%m-%d_%H-%M-%S_{day_name}_checkin.jpg')
+    user_photo_dir = os.path.join("uploads", "photos", str(current_user.id))
+    os.makedirs(user_photo_dir, exist_ok=True)
+    photo_path = os.path.join(user_photo_dir, photo_filename)
     
     with open(photo_path, "wb") as f:
         f.write(await photo.read())
@@ -115,11 +117,14 @@ async def check_out(
             detail=f"Lokasi tidak valid. Lokasi terdekat: {nearest['name']} ({nearest['distance']:.0f}m)"
         )
     
-    # Save photo
-    photo_dir = "uploads/photos"
+    # Save photo with user folder and formatted filename
     now = datetime.now()
-    photo_filename = f"{current_user.id}_{int(now.timestamp())}_out.jpg"
-    photo_path = os.path.join(photo_dir, photo_filename)
+    # Format: YYYY-MM-DD_HH-MM-SS_DayName_checkout.jpg
+    day_name = now.strftime('%A')  # Monday, Tuesday, etc
+    photo_filename = now.strftime(f'%Y-%m-%d_%H-%M-%SS_{day_name}_checkout.jpg')
+    user_photo_dir = os.path.join("uploads", "photos", str(current_user.id))
+    os.makedirs(user_photo_dir, exist_ok=True)
+    photo_path = os.path.join(user_photo_dir, photo_filename)
     
     with open(photo_path, "wb") as f:
         f.write(await photo.read())
