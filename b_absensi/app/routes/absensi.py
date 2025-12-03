@@ -71,7 +71,7 @@ async def check_in(
         check_in_time=now,
         check_in_latitude=latitude,
         check_in_longitude=longitude,
-        check_in_location=location_check['location'],
+        check_in_location=location_name,
         check_in_photo_url=photo_path,
         required_checkout_time=required_checkout,
         status="checked_in"
