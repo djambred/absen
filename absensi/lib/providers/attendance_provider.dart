@@ -12,6 +12,15 @@ class AttendanceProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get hasCheckedIn => _todayAttendance != null;
   bool get hasCheckedOut => _todayAttendance?.checkOutTime != null;
+  
+  // Check if current time allows checkout based on check-in time
+  bool get canCheckOutNow {
+    if (_todayAttendance == null || hasCheckedOut) return false;
+    final now = DateTime.now();
+    return now.isAfter(_todayAttendance!.requiredCheckoutTime);
+  }
+  
+  DateTime? get requiredCheckoutTime => _todayAttendance?.requiredCheckoutTime;
 
   final _apiService = ApiService();
 

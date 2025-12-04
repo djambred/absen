@@ -362,82 +362,131 @@ class _CheckInScreenState extends State<CheckInScreen> {
                     ),
                   ),
                 ),
-                  // Location Status Section - Compact
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Location Status - Compact
-                          if (_locationProvider.isLoading)
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: Row(
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Theme.of(context).primaryColor,
-                                      ),
-                                    ),
-                                    ),
-                                  // Close Row and Container for loading state
-                                  ],
-                                ),
-                              ),
-                          // Location status simplified to avoid syntax errors
+                  // Location Status Section - Compact (no scroll)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Location Status - Compact
+                        if (_locationProvider.isLoading)
                           Container(
-                            padding: const EdgeInsets.all(14),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: _locationProvider.isValidLocation ? Colors.green.shade50 : Colors.red.shade50,
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: _locationProvider.isValidLocation ? Colors.green.shade300 : Colors.red.shade300,
-                                width: 1.5,
-                              ),
+                              border: Border.all(color: Colors.grey.shade300),
                             ),
                             child: Row(
                               children: [
-                                Icon(
-                                  _locationProvider.isValidLocation ? Icons.check_circle : Icons.location_off,
-                                  color: _locationProvider.isValidLocation ? Colors.green : Colors.red,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _locationProvider.isValidLocation ? 'Lokasi Valid' : 'Lokasi Tidak Valid',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: _locationProvider.isValidLocation ? Colors.green : Colors.red,
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context).primaryColor,
                                     ),
                                   ),
                                 ),
-                                if (!_locationProvider.isValidLocation)
-                                  IconButton(
-                                    onPressed: _checkLocation,
-                                    icon: const Icon(Icons.refresh, size: 20),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    'Memeriksa lokasi...',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
+                                ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 12),
-                        ],
-                      ),
+                        // Location status with name and nearest location
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: _locationProvider.isValidLocation ? Colors.green.shade50 : Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: _locationProvider.isValidLocation ? Colors.green.shade300 : Colors.red.shade300,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: _locationProvider.isValidLocation ? Colors.green : Colors.red,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      _locationProvider.isValidLocation ? Icons.check_circle : Icons.location_off,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          _locationProvider.isValidLocation ? 'Lokasi Valid' : 'Lokasi Tidak Valid',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: _locationProvider.isValidLocation ? Colors.green.shade900 : Colors.red.shade900,
+                                          ),
+                                        ),
+                                        if (_locationProvider.locationCheck != null) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _locationProvider.locationCheck!.locationName,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${_locationProvider.locationCheck!.distance.toStringAsFixed(0)}m dari ${_locationProvider.isValidLocation ? 'titik' : 'posisi Anda'}',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  if (!_locationProvider.isValidLocation)
+                                    IconButton(
+                                      onPressed: _checkLocation,
+                                      icon: const Icon(Icons.refresh, size: 20),
+                                      style: IconButton.styleFrom(
+                                        foregroundColor: Colors.red,
+                                        backgroundColor: Colors.white,
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  // Action Buttons - Fixed at bottom
-                  Container(
-                    padding: const EdgeInsets.all(12),
+                  const Spacer(),
+                  // Action Buttons - Fixed at bottom with SafeArea
+                  SafeArea(
+                    top: false,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       boxShadow: [
@@ -542,6 +591,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
                               ),
                             ],
                           ),
+                    ),
                   ),
                 ],
               ),

@@ -26,6 +26,8 @@ class _MainScreenState extends State<MainScreen> {
       final attendanceProvider = context.read<AttendanceProvider>();
       final hasCheckedIn = attendanceProvider.hasCheckedIn;
       final hasCheckedOut = attendanceProvider.hasCheckedOut;
+      final canCheckOutNow = attendanceProvider.canCheckOutNow;
+      final requiredTime = attendanceProvider.requiredCheckoutTime;
       
       // Don't allow navigation if already checked out
       if (hasCheckedOut) {
@@ -34,6 +36,21 @@ class _MainScreenState extends State<MainScreen> {
             content: Text('Absensi hari ini sudah selesai'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+      
+      // Don't allow checkout if not yet time
+      if (hasCheckedIn && !canCheckOutNow) {
+        final timeStr = requiredTime != null 
+            ? '${requiredTime.hour.toString().padLeft(2, '0')}:${requiredTime.minute.toString().padLeft(2, '0')} WIB'
+            : 'waktu yang ditentukan';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Check out tersedia mulai jam $timeStr'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
           ),
         );
         return;
@@ -62,6 +79,7 @@ class _MainScreenState extends State<MainScreen> {
     final attendanceProvider = context.watch<AttendanceProvider>();
     final hasCheckedIn = attendanceProvider.hasCheckedIn;
     final hasCheckedOut = attendanceProvider.hasCheckedOut;
+    final canCheckOutNow = attendanceProvider.canCheckOutNow;
 
     return Scaffold(
       body: IndexedStack(
@@ -82,13 +100,13 @@ class _MainScreenState extends State<MainScreen> {
               hasCheckedOut 
                   ? Icons.check_circle
                   : hasCheckedIn 
-                      ? Icons.logout 
+                      ? (canCheckOutNow ? Icons.logout : Icons.access_time)
                       : Icons.login,
             ),
             label: hasCheckedOut 
                 ? 'Selesai' 
                 : hasCheckedIn 
-                    ? 'Check Out' 
+                    ? (canCheckOutNow ? 'Check Out' : 'Menunggu')
                     : 'Check In',
           ),
           const BottomNavigationBarItem(

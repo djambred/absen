@@ -11,18 +11,18 @@ import os
 router = APIRouter()
 
 def calculate_required_checkout(check_in_time: datetime) -> datetime:
-    """Calculate required checkout time based on check-in rules - DISABLED FOR TESTING"""
+    """Calculate required checkout time based on check-in rules"""
     check_in_hour_minute = check_in_time.time()
     
-    # Rule 1: Check-in ≤ 7:30 → checkout at 17:00
-    if check_in_hour_minute <= time(7, 30):
+    # Rule 1: Check-in before 08:00 → checkout at 17:00 WIB
+    if check_in_hour_minute < time(8, 0):
         return check_in_time.replace(hour=17, minute=0, second=0, microsecond=0)
     
-    # Rule 2: Check-in 8:00-10:00 → checkout at 19:00
+    # Rule 2: Check-in 08:00-10:00 → checkout at 19:00 WIB
     elif time(8, 0) <= check_in_hour_minute <= time(10, 0):
         return check_in_time.replace(hour=19, minute=0, second=0, microsecond=0)
     
-    # Rule 3: Check-in > 10:00 → allowed for testing, default checkout 8 hours later
+    # Rule 3: Check-in after 10:00 → marked as late, checkout at 19:00 WIB
     else:
         return check_in_time.replace(hour=19, minute=0, second=0, microsecond=0)
 
@@ -71,6 +71,13 @@ async def check_in(
     with open(photo_path, "wb") as f:
         f.write(await photo.read())
     
+    # Determine status based on check-in time
+    check_in_hour_minute = now.time()
+    if check_in_hour_minute <= time(10, 0):
+        attendance_status = "on_time"
+    else:
+        attendance_status = "late"
+    
     # Create attendance record
     attendance = Attendance(
         user_id=current_user.id,
@@ -80,7 +87,7 @@ async def check_in(
         check_in_location=location_name,
         check_in_photo_url=photo_path,
         required_checkout_time=required_checkout,
-        status="checked_in"
+        status=attendance_status
     )
     
     db.add(attendance)

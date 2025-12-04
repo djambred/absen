@@ -172,9 +172,47 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ] else ...[
           const Divider(height: 32),
-          Text(
-            'Bisa check out jam ${dateFormat.format(attendance.requiredCheckoutTime)}',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: attendance.canCheckOut ? Colors.green.shade50 : Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: attendance.canCheckOut ? Colors.green.shade300 : Colors.orange.shade300,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  attendance.canCheckOut ? Icons.check_circle : Icons.access_time,
+                  color: attendance.canCheckOut ? Colors.green : Colors.orange,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        attendance.canCheckOut 
+                            ? 'Check out tersedia sekarang'
+                            : 'Menunggu waktu check out',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: attendance.canCheckOut ? Colors.green.shade900 : Colors.orange.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Check out mulai ${dateFormat.format(attendance.requiredCheckoutTime)} WIB',
+                        style: const TextStyle(fontSize: 11, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ],
