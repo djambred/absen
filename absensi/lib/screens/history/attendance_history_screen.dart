@@ -3,6 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/attendance_provider.dart';
 
+// Marker model for calendar dots
+class _DayMarker {
+  bool hasCheckIn = false;
+  bool hasCheckOut = false;
+}
+
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
 
@@ -11,6 +17,9 @@ class AttendanceHistoryScreen extends StatefulWidget {
 }
 
 class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
+  DateTime _focusedMonth = DateTime.now();
+  DateTime? _selectedDate;
+
   @override
   void initState() {
     super.initState();
@@ -37,19 +46,200 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             );
           }
 
+          // Build calendar markers
+          final markers = _buildDayMarkers(provider);
+          final filtered = _filterBySelectedDateOrMonth(provider);
+
           return RefreshIndicator(
             onRefresh: () => provider.loadHistory(),
-            child: ListView.builder(
+            child: ListView(
               padding: const EdgeInsets.all(16),
-              itemCount: provider.history.length,
-              itemBuilder: (context, index) {
-                final attendance = provider.history[index];
-                return _buildAttendanceCard(attendance);
-              },
+              children: [
+                _buildMonthHeader(),
+                const SizedBox(height: 8),
+                _buildCalendarGrid(markers),
+                const SizedBox(height: 16),
+                if (_selectedDate != null)
+                  Row(
+                    children: [
+                      const Icon(Icons.event, size: 18, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat('EEEE, dd MMM yyyy').format(_selectedDate!),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 8),
+                if (filtered.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.grey),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text('Tidak ada catatan pada tanggal ini'),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...filtered.map(_buildAttendanceCard),
+              ],
             ),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildMonthHeader() {
+    final monthStr = DateFormat('MMMM yyyy').format(_focusedMonth);
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () {
+            setState(() {
+              _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
+              _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+            });
+          },
+          icon: const Icon(Icons.chevron_left),
+        ),
+        Expanded(
+          child: Center(
+            child: Text(
+              monthStr,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () {
+            setState(() {
+              _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
+              _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+            });
+          },
+          icon: const Icon(Icons.chevron_right),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCalendarGrid(Map<int, _DayMarker> markers) {
+    // Weekday headers
+    final weekdays = ['S', 'M', 'S', 'R', 'K', 'J', 'S'];
+    final firstOfMonth = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
+    final startWeekday = firstOfMonth.weekday % 7; // make Sunday index 0
+    final daysInMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
+
+    final cells = <Widget>[];
+    cells.add(Row(
+      children: weekdays
+          .map((w) => Expanded(
+                child: Center(
+                  child: Text(w, style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600)),
+                ),
+              ))
+          .toList(),
+    ));
+    cells.add(const SizedBox(height: 6));
+
+    int dayCounter = 1;
+    for (int week = 0; week < 6; week++) {
+      final row = <Widget>[];
+      for (int wd = 0; wd < 7; wd++) {
+        final index = week * 7 + wd;
+        if (index < startWeekday || dayCounter > daysInMonth) {
+          row.add(Expanded(child: SizedBox(height: 44)));
+        } else {
+          final marker = markers[dayCounter];
+          final date = DateTime(_focusedMonth.year, _focusedMonth.month, dayCounter);
+          final isSelected = _selectedDate != null && _isSameDate(_selectedDate!, date);
+          row.add(Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedDate = date),
+              child: Container(
+                height: 44,
+                margin: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.blue.shade50 : Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: isSelected ? Colors.blue : Colors.grey.shade300),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('$dayCounter', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    if (marker != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (marker.hasCheckIn)
+                              _dot(Colors.green),
+                            if (marker.hasCheckOut)
+                              _dot(Colors.orange),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ));
+          dayCounter++;
+        }
+      }
+      cells.add(Row(children: row));
+    }
+
+    return Column(children: cells);
+  }
+
+  Map<int, _DayMarker> _buildDayMarkers(AttendanceProvider provider) {
+    final markers = <int, _DayMarker>{};
+    for (final att in provider.history) {
+      if (att.checkInTime.year == _focusedMonth.year && att.checkInTime.month == _focusedMonth.month) {
+        final day = att.checkInTime.day;
+        markers.putIfAbsent(day, () => _DayMarker());
+        markers[day]!.hasCheckIn = true;
+        if (att.checkOutTime != null) markers[day]!.hasCheckOut = true;
+      }
+    }
+    return markers;
+  }
+
+  // Kept for reference; use _filterBySelectedDateOrMonth instead
+
+  List<dynamic> _filterBySelectedDateOrMonth(AttendanceProvider provider) {
+    if (_selectedDate != null) {
+      return provider.history.where((att) => _isSameDate(att.checkInTime, _selectedDate!)).toList();
+    }
+    // Fallback: show entries for the focused month
+    return provider.history
+        .where((att) => att.checkInTime.year == _focusedMonth.year && att.checkInTime.month == _focusedMonth.month)
+        .toList();
+  }
+
+  bool _isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Widget _dot(Color color) {
+    return Container(
+      width: 6,
+      height: 6,
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 

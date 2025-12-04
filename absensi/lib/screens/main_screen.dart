@@ -25,6 +25,19 @@ class _MainScreenState extends State<MainScreen> {
       // Check in/out button - show appropriate screen based on attendance status
       final attendanceProvider = context.read<AttendanceProvider>();
       final hasCheckedIn = attendanceProvider.hasCheckedIn;
+      final hasCheckedOut = attendanceProvider.hasCheckedOut;
+      
+      // Don't allow navigation if already checked out
+      if (hasCheckedOut) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Absensi hari ini sudah selesai'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
       
       Navigator.push(
         context,

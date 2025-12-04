@@ -9,9 +9,20 @@ import 'screens/splash_screen.dart';
 import 'services/secure_storage_service.dart';
 
 void main() async {
+  debugPrint('=== APP START ===');
   WidgetsFlutterBinding.ensureInitialized();
-  await SecureStorageService().init();
+  debugPrint('Flutter binding initialized');
+  
+  try {
+    await SecureStorageService().init();
+    debugPrint('SecureStorageService initialized');
+  } catch (e) {
+    debugPrint('Error initializing SecureStorageService: $e');
+  }
+  
+  debugPrint('Running app...');
   runApp(const MyApp());
+  debugPrint('=== APP STARTED ===');
 }
 
 class MyApp extends StatelessWidget {
@@ -56,24 +67,39 @@ class _AuthWrapperState extends State<AuthWrapper> {
   bool _splashShown = false;
 
   @override
+  void initState() {
+    super.initState();
+    debugPrint('AuthWrapper initialized');
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
+        debugPrint('AuthWrapper build - splashShown: $_splashShown, isAuthenticated: ${authProvider.isAuthenticated}');
+        
         // Show splash screen only once at the start
         if (!_splashShown) {
+          debugPrint('Showing splash screen');
           return SplashScreen(
             onComplete: () {
-              setState(() {
-                _splashShown = true;
-              });
+              debugPrint('Splash onComplete called');
+              if (mounted) {
+                setState(() {
+                  _splashShown = true;
+                });
+                debugPrint('Splash completed, rebuilding with _splashShown = true');
+              }
             },
           );
         }
         
         // After splash, show login or main screen based on auth state
-        return authProvider.isAuthenticated 
+        final screen = authProvider.isAuthenticated 
             ? const MainScreen() 
             : const LoginScreen();
+        debugPrint('Showing ${authProvider.isAuthenticated ? "MainScreen" : "LoginScreen"}');
+        return screen;
       },
     );
   }

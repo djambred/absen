@@ -14,10 +14,21 @@ class BiometricService {
   // Check if device supports biometric
   Future<bool> canUseBiometric() async {
     try {
+      debugPrint('BiometricService: Checking if device can use biometric...');
       final canCheck = await _localAuth.canCheckBiometrics;
+      debugPrint('BiometricService: canCheckBiometrics = $canCheck');
+      
       final isDeviceSupported = await _localAuth.isDeviceSupported();
-      return canCheck && isDeviceSupported;
+      debugPrint('BiometricService: isDeviceSupported = $isDeviceSupported');
+      
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+      debugPrint('BiometricService: availableBiometrics = $availableBiometrics');
+      
+      final result = canCheck && isDeviceSupported;
+      debugPrint('BiometricService: canUseBiometric result = $result');
+      return result;
     } catch (e) {
+      debugPrint('BiometricService: canUseBiometric error: $e');
       return false;
     }
   }
@@ -34,15 +45,64 @@ class BiometricService {
   // Authenticate with biometric
   Future<bool> authenticate({String reason = 'Silakan verifikasi untuk login'}) async {
     try {
-      return await _localAuth.authenticate(
+      debugPrint('=== BiometricService.authenticate START ===');
+      debugPrint('Reason: $reason');
+      
+      // First check if biometric is available
+      final canCheck = await _localAuth.canCheckBiometrics;
+      debugPrint('canCheckBiometrics: $canCheck');
+      
+      if (!canCheck) {
+        debugPrint('Biometric check not available on this device');
+        return false;
+      }
+      
+      final availableBiometrics = await _localAuth.getAvailableBiometrics();
+      debugPrint('Available biometrics: $availableBiometrics');
+      
+      if (availableBiometrics.isEmpty) {
+        debugPrint('No biometric types available');
+        return false;
+      }
+      
+      debugPrint('Calling _localAuth.authenticate()...');
+      
+      final result = await _localAuth.authenticate(
         localizedReason: reason,
         options: const AuthenticationOptions(
           stickyAuth: true,
-          biometricOnly: true,
+          biometricOnly: true, // Force biometric only to ensure popup appears
+          useErrorDialogs: true,
+          sensitiveTransaction: false,
         ),
       );
+      
+      debugPrint('=== BiometricService.authenticate END - result: $result ===');
+      return result;
     } on PlatformException catch (e) {
-      debugPrint('Biometric authentication error: $e');
+      debugPrint('=== BiometricService.authenticate EXCEPTION ===');
+      debugPrint('Code: ${e.code}');
+      debugPrint('Message: ${e.message}');
+      debugPrint('Details: ${e.details}');
+      
+      // Handle specific error codes
+      if (e.code == 'NotAvailable') {
+        debugPrint('ERROR: Biometric not available on device');
+      } else if (e.code == 'NotEnrolled') {
+        debugPrint('ERROR: No biometric enrolled - user needs to set up fingerprint/face in Settings');
+      } else if (e.code == 'LockedOut') {
+        debugPrint('ERROR: Biometric locked out due to too many attempts');
+      } else if (e.code == 'PermanentlyLockedOut') {
+        debugPrint('ERROR: Biometric permanently locked out');
+      } else if (e.code == 'PasscodeNotSet') {
+        debugPrint('ERROR: Device passcode not set');
+      }
+      
+      return false;
+    } catch (e, stackTrace) {
+      debugPrint('=== BiometricService.authenticate UNEXPECTED ERROR ===');
+      debugPrint('Error: $e');
+      debugPrint('StackTrace: $stackTrace');
       return false;
     }
   }
@@ -58,11 +118,33 @@ class BiometricService {
     required String email,
     required String password,
   }) async {
-    debugPrint('Enabling biometric for email: $email');
-    await _storage.write(key: _biometricEnabledKey, value: 'true');
-    await _storage.write(key: _savedEmailKey, value: email);
-    await _storage.write(key: _savedPasswordKey, value: password);
-    debugPrint('Biometric credentials saved successfully');
+    try {
+      debugPrint('BiometricService.enableBiometric START - email: $email');
+      
+      debugPrint('Writing biometric_enabled = true');
+      await _storage.write(key: _biometricEnabledKey, value: 'true');
+      
+      debugPrint('Writing saved_email = $email');
+      await _storage.write(key: _savedEmailKey, value: email);
+      
+      debugPrint('Writing saved_password (length: ${password.length})');
+      await _storage.write(key: _savedPasswordKey, value: password);
+      
+      // Verify immediately
+      final enabledCheck = await _storage.read(key: _biometricEnabledKey);
+      final emailCheck = await _storage.read(key: _savedEmailKey);
+      final passCheck = await _storage.read(key: _savedPasswordKey);
+      
+      debugPrint('BiometricService.enableBiometric VERIFY:');
+      debugPrint('  - enabled: $enabledCheck');
+      debugPrint('  - email: $emailCheck');
+      debugPrint('  - password exists: ${passCheck != null}');
+      
+      debugPrint('BiometricService.enableBiometric SUCCESS');
+    } catch (e) {
+      debugPrint('BiometricService.enableBiometric ERROR: $e');
+      rethrow;
+    }
   }
   
   // Disable biometric login

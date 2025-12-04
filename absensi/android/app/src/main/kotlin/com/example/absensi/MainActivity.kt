@@ -1,5 +1,6 @@
 package com.example.absensi
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// Required for local_auth biometric prompt which needs FragmentActivity
+class MainActivity : FlutterFragmentActivity()

@@ -34,7 +34,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _toggleBiometric(bool value) async {
+    debugPrint('Toggle biometric called with value: $value');
+    debugPrint('Can use biometric: $_canUseBiometric');
+    
     if (!_canUseBiometric) {
+      debugPrint('Device does not support biometric');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Perangkat tidak mendukung biometrik'),
@@ -48,27 +52,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       if (value) {
-        // Enable biometric - show dialog to input credentials
-        final result = await showDialog<Map<String, String>>(
+        debugPrint('Enabling biometric...');
+        
+        // Show confirmation dialog
+        final confirmed = await showDialog<bool>(
           context: context,
-          builder: (context) => _BiometricCredentialDialog(),
+          builder: (context) => AlertDialog(
+            title: const Text('Aktifkan Login Biometrik'),
+            content: const Text(
+              'Anda perlu memasukkan password untuk mengaktifkan login biometrik.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Lanjutkan'),
+              ),
+            ],
+          ),
         );
 
-        if (result != null && mounted) {
-          final email = result['email']!;
-          final password = result['password']!;
+        if (confirmed != true) {
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        // Show password input dialog
+        if (!mounted) {
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        final password = await showDialog<String>(
+          context: context,
+          builder: (context) => _PasswordInputDialog(),
+        );
+
+        debugPrint('Password dialog result: ${password != null ? "Got password" : "Cancelled"}');
+
+        if (password != null && mounted) {
+          final authProvider = context.read<AuthProvider>();
+          final email = authProvider.user?.email ?? '';
           
-          // Authenticate with biometric first
-          final authenticated = await _biometricService.authenticate(
-            reason: 'Verifikasi identitas untuk mengaktifkan login biometrik',
-          );
+          if (email.isEmpty) {
+            setState(() => _isLoading = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Email user tidak ditemukan'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
           
-          if (authenticated && mounted) {
-            // Save credentials for biometric
+          debugPrint('Attempting to save credentials for email: $email');
+          
+          // Save credentials
+          try {
+            debugPrint('Saving credentials - Email: $email, Password length: ${password.length}');
+            
             await _biometricService.enableBiometric(
               email: email,
               password: password,
             );
+            
+            debugPrint('enableBiometric() completed');
+            
+            // Verify credentials were saved
+            final savedCreds = await _biometricService.getSavedCredentials();
+            final isEnabled = await _biometricService.isBiometricEnabled();
+            
+            debugPrint('Verification - isEnabled: $isEnabled, hasCreds: ${savedCreds != null}');
+            if (savedCreds != null) {
+              debugPrint('Saved email matches: ${savedCreds['email'] == email}');
+            }
             
             setState(() {
               _biometricEnabled = true;
@@ -78,23 +140,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Login biometrik berhasil diaktifkan'),
+                  content: Text('Login biometrik berhasil diaktifkan!'),
                   backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
                 ),
               );
             }
-          } else {
+          } catch (e) {
+            debugPrint('Error saving credentials: $e');
+            debugPrint('Error stack trace: ${StackTrace.current}');
             setState(() => _isLoading = false);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Verifikasi biometrik gagal'),
+                SnackBar(
+                  content: Text('Gagal menyimpan kredensial: ${e.toString()}'),
                   backgroundColor: Colors.red,
                 ),
               );
             }
           }
         } else {
+          debugPrint('Password dialog cancelled');
           setState(() => _isLoading = false);
         }
       } else {
@@ -290,20 +356,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-class _BiometricCredentialDialog extends StatefulWidget {
+class _PasswordInputDialog extends StatefulWidget {
   @override
-  State<_BiometricCredentialDialog> createState() => _BiometricCredentialDialogState();
+  State<_PasswordInputDialog> createState() => _PasswordInputDialogState();
 }
 
-class _BiometricCredentialDialogState extends State<_BiometricCredentialDialog> {
+class _PasswordInputDialogState extends State<_PasswordInputDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -311,39 +375,21 @@ class _BiometricCredentialDialogState extends State<_BiometricCredentialDialog> 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Aktifkan Login Biometrik'),
+      title: const Text('Masukkan Password'),
       content: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Masukkan email dan password Anda untuk mengaktifkan login biometrik',
+              'Masukkan password Anda untuk verifikasi',
               style: TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 16),
             TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email),
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Email harus diisi';
-                }
-                if (!value.contains('@')) {
-                  return 'Email tidak valid';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
+              autofocus: true,
               decoration: InputDecoration(
                 labelText: 'Password',
                 prefixIcon: const Icon(Icons.lock),
@@ -377,10 +423,7 @@ class _BiometricCredentialDialogState extends State<_BiometricCredentialDialog> 
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
-              Navigator.pop(context, {
-                'email': _emailController.text.trim(),
-                'password': _passwordController.text,
-              });
+              Navigator.pop(context, _passwordController.text);
             }
           },
           child: const Text('Aktifkan'),
