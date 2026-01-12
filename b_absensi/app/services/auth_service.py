@@ -48,6 +48,14 @@ class AuthService:
         access_token = create_access_token({"sub": user.id})
         refresh_token = create_refresh_token({"sub": user.id})
         
+        # Get primary position or first position
+        primary_position = None
+        if user.positions:
+            # Try to find primary position
+            for pos in user.positions:
+                primary_position = pos
+                break
+        
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -57,7 +65,7 @@ class AuthService:
                 "email": user.email,
                 "name": user.name,
                 "nip": user.nip,
-                "role": user.role,
+                "role": primary_position.code if primary_position else "STAFF",
                 "department": user.department,
                 "is_active": user.is_active,
                 "created_at": user.created_at
