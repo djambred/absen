@@ -88,7 +88,7 @@ async def get_leaves(
                 "total_days": leave.total_days,
                 "reason": leave.reason,
                 "status": leave.status.value,
-                "attachment_path": leave.attachment_path,
+                "attachment_url": leave.attachment_url,
                 "approval_level_1_by": leave.approval_level_1_by,
                 "approval_level_1_at": leave.approval_level_1_at.isoformat() if leave.approval_level_1_at else None,
                 "approval_level_1_notes": leave.approval_level_1_notes,
@@ -197,7 +197,7 @@ async def submit_leave(
             end_date=end,
             total_days=total_days,
             reason=reason.strip(),
-            attachment_path=attachment_path,
+            attachment_url=attachment_path,
             supervisor_id=supervisor_id,  # Add supervisor_id
             status=LeaveStatus.PENDING
         )
