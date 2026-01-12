@@ -174,36 +174,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.beach_access, size: 28),
-                          SizedBox(height: 4),
-                          Text(
+                          const Icon(Icons.beach_access, size: 28),
+                          const SizedBox(height: 4),
+                          const Text(
                             'Cuti',
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                           ),
                           if (!canApplyForCuti)
                             Text(
-                              '${monthsWorked}/12 bulan',
-                              style: TextStyle(fontSize: 9),
+                              '$monthsWorked/12 bulan',
+                              style: const TextStyle(fontSize: 9),
                             ),
                         ],
                       ),
-                    ),
-                  ),
-                ),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Column(
-                      children: [
-                        Icon(Icons.beach_access, size: 28),
-                        SizedBox(height: 4),
-                        Text(
-                          'Cuti',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                      ],
                     ),
                   ),
                 ),
