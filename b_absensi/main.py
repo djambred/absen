@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import Base, engine
-from app.routes import auth, absensi, leave
+from app.routes import auth, attendance, leave
 from app.scheduler import start_scheduler, stop_scheduler
 
 # Import models to ensure they are registered with SQLAlchemy
@@ -40,7 +40,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(absensi.router, prefix="/api/attendance", tags=["Attendance"])
+app.include_router(attendance.router, prefix="/api/attendance", tags=["Attendance"])
 app.include_router(leave.router, prefix="/api/leave", tags=["Leave"])
 
 @app.get("/")
