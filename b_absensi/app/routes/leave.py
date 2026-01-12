@@ -158,6 +158,7 @@ async def submit_leave(
         
         if should_deduct:
             # Check quota availability
+            # NOTE: No employment duration validation - users can use CUTI immediately
             quota = LeaveQuotaService.get_or_create_quota(db, current_user.id)
             if quota.remaining_quota < total_days:
                 raise HTTPException(

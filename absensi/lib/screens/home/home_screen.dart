@@ -33,8 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = authProvider.user;
 
     // Check if user can apply for annual leave (worked for 1+ year)
-    final canApplyForCuti = user != null && 
-        DateTime.now().difference(user.createdAt).inDays >= 365;
+    // NOTE: This validation is disabled - users can apply CUTI immediately
+    final canApplyForCuti = true; // user != null && DateTime.now().difference(user.createdAt).inDays >= 365;
     final monthsWorked = user != null 
         ? (DateTime.now().difference(user.createdAt).inDays / 30).floor()
         : 0;
@@ -148,11 +148,9 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: Tooltip(
-                    message: !canApplyForCuti 
-                        ? 'Cuti tahunan dapat diajukan setelah bekerja minimal 1 tahun (saat ini: $monthsWorked bulan)'
-                        : 'Ajukan cuti tahunan',
+                    message: 'Ajukan cuti tahunan',
                     child: ElevatedButton(
-                      onPressed: !canApplyForCuti ? null : () {
+                      onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -166,8 +164,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: !canApplyForCuti ? Colors.grey[300] : Colors.pink[400],
-                        foregroundColor: !canApplyForCuti ? Colors.grey[600] : Colors.white,
+                        backgroundColor: Colors.pink[400],
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -180,11 +178,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Cuti',
                             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                           ),
-                          if (!canApplyForCuti)
-                            Text(
-                              '$monthsWorked/12 bulan',
-                              style: const TextStyle(fontSize: 9),
-                            ),
                         ],
                       ),
                     ),

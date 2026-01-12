@@ -40,6 +40,29 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
     _startTime = const TimeOfDay(hour: 8, minute: 0);
     _endTime = const TimeOfDay(hour: 17, minute: 0);
     _loadSupervisors();
+    
+    // Set kategori default berdasarkan tipe yang dipilih
+    if (_selectedType != null) {
+      _setDefaultCategory();
+    }
+  }
+  
+  void _setDefaultCategory() {
+    final categories = _getAvailableCategories();
+    if (categories.isNotEmpty && _selectedCategory == null) {
+      _selectedCategory = categories.first;
+    }
+  }
+
+  String _getLeaveTypeCode(LeaveType type) {
+    switch (type) {
+      case LeaveType.cuti:
+        return 'cuti';
+      case LeaveType.sakit:
+        return 'sakit';
+      case LeaveType.izin:
+        return 'izin';
+    }
   }
 
   Future<void> _loadSupervisors() async {
@@ -142,6 +165,11 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
       return;
     }
 
+    if (_selectedCategory == null) {
+      ErrorHandler.showErrorSnackBar(context, 'Pilih kategori terlebih dahulu');
+      return;
+    }
+
     if (_selectedType == LeaveType.sakit && _selectedCategory == LeaveCategory.sakitDenganSurat && _attachmentFile == null) {
       ErrorHandler.showErrorSnackBar(context, 'Lampiran surat sakit wajib diisi');
       return;
@@ -157,11 +185,41 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
     try {
       final leaveProvider = context.read<LeaveProvider>();
 
+      // Combine date and time for IZIN type
+      DateTime startDateTime = _startDate!;
+      DateTime endDateTime = _endDate!;
+
+      if (_selectedType == LeaveType.izin && _startTime != null && _endTime != null) {
+        startDateTime = DateTime(
+          _startDate!.year,
+          _startDate!.month,
+          _startDate!.day,
+          _startTime!.hour,
+          _startTime!.minute,
+        );
+        endDateTime = DateTime(
+          _endDate!.year,
+          _endDate!.month,
+          _endDate!.day,
+          _endTime!.hour,
+          _endTime!.minute,
+        );
+      }
+
+      // Debug: print values before submit
+      debugPrint('Submitting leave:');
+      debugPrint('  Type: ${_selectedType?.name}');
+      debugPrint('  Category: ${_selectedCategory?.name}');
+      debugPrint('  Start: $startDateTime');
+      debugPrint('  End: $endDateTime');
+      debugPrint('  Supervisor: $_selectedSupervisor');
+      debugPrint('  Attachment: ${_attachmentFile?.path}');
+
       await leaveProvider.submitLeave(
-        leaveType: _selectedType!.name,
-        category: (_selectedCategory ?? LeaveCategory.cutiTahunan).name,
-        startDate: _startDate!,
-        endDate: _endDate!,
+        leaveType: _getLeaveTypeCode(_selectedType!),
+        category: _selectedCategory!.code,
+        startDate: startDateTime,
+        endDate: endDateTime,
         reason: _reasonController.text.trim(),
         supervisorId: _selectedSupervisor,
         attachmentPath: _attachmentFile?.path,
@@ -543,19 +601,9 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
                         : _supervisors.map((supervisor) {
                             return DropdownMenuItem<String>(
                               value: supervisor['id'],
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    supervisor['name'],
-                                    style: const TextStyle(fontWeight: FontWeight.w500),
-                                  ),
-                                  Text(
-                                    '${supervisor['nip']} - ${supervisor['department'] ?? 'N/A'}',
-                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                  ),
-                                ],
+                              child: Text(
+                                '${supervisor['name']} (${supervisor['nip']})',
+                                overflow: TextOverflow.ellipsis,
                               ),
                             );
                           }).toList(),
