@@ -1,7 +1,12 @@
 import os
 from dotenv import load_dotenv
+import pytz
 
 load_dotenv()
+
+# Timezone Configuration
+TIMEZONE = "Asia/Jakarta"
+TZ = pytz.timezone(TIMEZONE)
 
 # Database Configuration
 DATABASE_USER = os.getenv("DATABASE_USER", "root")
@@ -44,6 +49,9 @@ APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
 APP_PORT = int(os.getenv("APP_PORT", "8000"))
 APP_ENV = os.getenv("APP_ENV", "development")
 
+# File Upload Configuration
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+
 # Settings class for compatibility
 class Settings:
     DATABASE_URL = DATABASE_URL
@@ -51,8 +59,11 @@ class Settings:
     ALGORITHM = ALGORITHM
     ACCESS_TOKEN_EXPIRE_DAYS = ACCESS_TOKEN_EXPIRE_DAYS
     LOKASI_ABSENSI = LOKASI_ABSENSI
+    TIMEZONE = TIMEZONE
+    TZ = TZ
     APP_HOST = APP_HOST
     APP_PORT = APP_PORT
     APP_ENV = APP_ENV
+    UPLOAD_DIR = UPLOAD_DIR
 
 settings = Settings()

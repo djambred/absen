@@ -5,16 +5,23 @@ from datetime import datetime, time, date, timedelta
 from typing import Optional
 import os
 import uuid
+import pytz
 from app.database import get_db
 from app.models.user import User
 from app.models.absensi import Attendance, AttendanceStatus
 from app.schemas.absensi import AttendanceResponse, AttendanceHistory
 from app.services.location_service import LocationService
+from app.services.auto_checkout_service import AutoCheckoutService
 from middleware.auth_middleware import get_current_user
 
 router = APIRouter()
 
 UPLOAD_DIR = "uploads"
+TZ = pytz.timezone('Asia/Jakarta')
+
+def get_jakarta_time():
+    """Get current datetime in Asia/Jakarta timezone"""
+    return datetime.now(TZ)
 
 def save_photo(file: UploadFile) -> str:
     """Save uploaded photo"""
@@ -30,7 +37,7 @@ def save_photo(file: UploadFile) -> str:
 
 def calculate_required_checkout(check_in_time: datetime) -> datetime:
     """
-    Calculate required checkout time based on check-in time:
+    Calculate required checkout time based on check-in time (Jakarta timezone):
     - Check in <= 7:30 -> Check out at 17:00
     - Check in 8:00-10:00 -> Check out at 19:00
     - Check in > 10:00 -> Not allowed
@@ -39,9 +46,9 @@ def calculate_required_checkout(check_in_time: datetime) -> datetime:
     today = check_in_time.date()
     
     if check_in_hour <= time(7, 30):
-        return datetime.combine(today, time(17, 0))
+        return TZ.localize(datetime.combine(today, time(17, 0)))
     elif time(8, 0) <= check_in_hour <= time(10, 0):
-        return datetime.combine(today, time(19, 0))
+        return TZ.localize(datetime.combine(today, time(19, 0)))
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -85,8 +92,8 @@ async def check_in(
     # Save photo
     photo_filename = save_photo(photo)
     
-    # Check time and calculate status
-    check_in_time = datetime.now()
+    # Check time and calculate status (Jakarta timezone)
+    check_in_time = get_jakarta_time()
     current_time = check_in_time.time()
     
     # Determine status
@@ -153,7 +160,7 @@ async def check_out(
         )
     
     # Check if it's time to check out
-    now = datetime.now()
+    now = get_jakarta_time()
     if now < attendance.required_checkout_time:
         diff = attendance.required_checkout_time - now
         hours = int(diff.total_seconds() // 3600)
@@ -193,7 +200,7 @@ def get_today_attendance(
     db: Session = Depends(get_db)
 ):
     """Get today's attendance"""
-    today = date.today()
+    today = get_jakarta_time().date()
     attendance = db.query(Attendance).filter(
         and_(
             Attendance.user_id == current_user.id,
@@ -238,3 +245,50 @@ def get_attendance_history(
         page=page,
         page_size=page_size
     )
+
+@router.post("/admin/auto-checkout")
+def manual_auto_checkout(
+    target_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Manually trigger auto-checkout for users who forgot to check out.
+    Admin only endpoint.
+    If target_date is not provided, uses yesterday's date.
+    Format: YYYY-MM-DD
+    """
+    # Check if user is admin (you can add role checking here)
+    # For now, any authenticated user can trigger this
+    
+    if target_date:
+        try:
+            target = datetime.strptime(target_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid date format. Use YYYY-MM-DD"
+            )
+    else:
+        # Default to yesterday
+        target = date.today() - timedelta(days=1)
+    
+    # Don't allow future dates
+    if target > date.today():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot auto-checkout for future dates"
+        )
+    
+    result = AutoCheckoutService.manual_auto_checkout_for_date(target)
+    
+    if "error" in result:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=result["error"]
+        )
+    
+    return {
+        "message": f"Auto-checkout completed for {result['date']}",
+        "processed_count": result["processed"]
+    }

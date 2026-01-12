@@ -41,6 +41,7 @@ services:
       APP_HOST: 0.0.0.0
       APP_PORT: 8000
       APP_ENV: ${APP_ENV:-development}
+      TZ: Asia/Jakarta
     ports:
       - "8000:8000"
     volumes:
