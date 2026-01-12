@@ -13,7 +13,7 @@ from ..services.holiday_service import HolidayService
 from ..middleware.auth_middleware import get_current_user
 from ..config import UPLOAD_DIR
 
-router = APIRouter(prefix="/leave", tags=["leave"])
+router = APIRouter()
 
 # Ensure upload directory exists
 leave_uploads = Path(UPLOAD_DIR) / "leave_attachments"
