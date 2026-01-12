@@ -12,7 +12,7 @@ from app.models.absensi import Attendance, AttendanceStatus
 from app.schemas.absensi import AttendanceResponse, AttendanceHistory
 from app.services.location_service import LocationService
 from app.services.auto_checkout_service import AutoCheckoutService
-from middleware.auth_middleware import get_current_user
+from app.middleware.auth_middleware import get_current_user
 
 router = APIRouter()
 

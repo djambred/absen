@@ -10,7 +10,7 @@ from ..models.user import User
 from ..models.absensi import Leave, LeaveQuota, LeaveType, LeaveCategory, LeaveStatus
 from ..services.leave_quota_service import LeaveQuotaService
 from ..services.holiday_service import HolidayService
-from ..utils.auth import get_current_user
+from ..middleware.auth_middleware import get_current_user
 from ..config import UPLOAD_DIR
 
 router = APIRouter(prefix="/leave", tags=["leave"])
