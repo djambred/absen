@@ -191,7 +191,7 @@ async def submit_leave(
         # Create leave record
         new_leave = Leave(
             user_id=current_user.id,
-            type=leave_type,
+            leave_type=leave_type,
             category=leave_category,
             start_date=start,
             end_date=end,
@@ -207,7 +207,7 @@ async def submit_leave(
         
         # Deduct quota if applicable (will be refunded if rejected)
         if should_deduct:
-            service.deduct_quota(current_user.id, total_days)
+            LeaveQuotaService.deduct_quota(db, current_user.id, total_days)
         
         db.commit()
         db.refresh(new_leave)
