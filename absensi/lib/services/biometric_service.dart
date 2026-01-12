@@ -169,14 +169,19 @@ class BiometricService {
   
   // Get saved credentials
   Future<Map<String, String>?> getSavedCredentials() async {
-    final email = await _storage.read(key: _savedEmailKey);
-    final password = await _storage.read(key: _savedPasswordKey);
-    
-    debugPrint('Getting saved credentials - Email: $email, Password exists: ${password != null}');
-    
-    if (email != null && password != null) {
-      return {'email': email, 'password': password};
+    try {
+      final email = await _storage.read(key: _savedEmailKey);
+      final password = await _storage.read(key: _savedPasswordKey);
+      
+      debugPrint('Getting saved credentials - Email: $email, Password exists: ${password != null}');
+      
+      if (email != null && password != null) {
+        return {'email': email, 'password': password};
+      }
+      return null;
+    } catch (e) {
+      debugPrint('BiometricService: Error reading saved credentials: $e');
+      return null;
     }
-    return null;
   }
 }

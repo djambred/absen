@@ -27,8 +27,7 @@ async def get_leave_quota(
 ):
     """Get leave quota for current user"""
     try:
-        service = LeaveQuotaService(db)
-        quota = service.get_or_create_quota(current_user.id)
+        quota = LeaveQuotaService.get_or_create_quota(db, current_user.id)
         
         return {
             "year": quota.year,
@@ -109,8 +108,7 @@ async def submit_leave(
             raise HTTPException(status_code=400, detail="End date must be after start date")
         
         # Calculate working days (excluding weekends and holidays)
-        service = LeaveQuotaService(db)
-        total_days = service.calculate_working_days(start, end)
+        total_days = LeaveQuotaService.calculate_working_days(start, end)
         
         if total_days == 0:
             raise HTTPException(
@@ -126,11 +124,11 @@ async def submit_leave(
         
         if should_deduct:
             # Check quota availability
-            quota = service.get_or_create_quota(current_user.id)
-            if quota.remaining < total_days:
+            quota = LeaveQuotaService.get_or_create_quota(db, current_user.id)
+            if quota.remaining_quota < total_days:
                 raise HTTPException(
                     status_code=400, 
-                    detail=f"Insufficient leave quota. Available: {quota.remaining} days, Required: {total_days} days"
+                    detail=f"Insufficient leave quota. Available: {quota.remaining_quota} days, Required: {total_days} days"
                 )
         
         # Handle attachment if provided
@@ -268,11 +266,7 @@ async def reject_leave(
         )
         
         if should_refund:
-            service = LeaveQuotaService(db)
-            quota = service.get_or_create_quota(leave.user_id)
-            quota.used -= leave.total_days
-            if quota.used < 0:
-                quota.used = 0
+            LeaveQuotaService.restore_quota(db, leave.user_id, leave.total_days)
         
         leave.status = LeaveStatus.REJECTED
         leave.approval_level_1_notes = notes

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/auth_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/location_provider.dart';
@@ -49,6 +50,16 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Absen MNC University',
         debugShowCheckedModeBanner: false,
+        locale: const Locale('id', 'ID'),
+        localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('id', 'ID'),
+          Locale('en', 'US'),
+        ],
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.blue,
