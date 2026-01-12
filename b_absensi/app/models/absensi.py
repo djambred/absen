@@ -83,6 +83,9 @@ class Leave(Base):
     
     status = Column(String(50), default="pending")
     
+    # Supervisor assignment for approval workflow
+    supervisor_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    
     # Approval tracking
     approved_by_level_1 = Column(String(36), ForeignKey("users.id"), nullable=True)  # Supervisor
     approved_at_level_1 = Column(DateTime, nullable=True)
@@ -104,6 +107,7 @@ class Leave(Base):
     
     # Relationships
     user = relationship("User", back_populates="leaves", foreign_keys=[user_id])
+    supervisor = relationship("User", foreign_keys=[supervisor_id])
     approver_level_1_user = relationship("User", back_populates="leaves_to_approve_l1", foreign_keys=[approved_by_level_1])
     approver_level_2_user = relationship("User", back_populates="leaves_to_approve_l2", foreign_keys=[approved_by_level_2])
 

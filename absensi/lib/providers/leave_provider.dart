@@ -78,7 +78,7 @@ class LeaveProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiService.submitLeave(
+      await _apiService.submitLeave(
         leaveType: leaveType,
         category: category,
         startDate: startDate,

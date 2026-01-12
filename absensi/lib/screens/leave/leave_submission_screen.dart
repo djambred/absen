@@ -51,7 +51,9 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
       final apiService = ApiService();
       final result = await apiService.getSupervisors();
       setState(() {
-        _supervisors = List<Map<String, dynamic>>.from(result['supervisors']);
+        _supervisors = result
+            .map((item) => item as Map<String, dynamic>)
+            .toList();
         _isLoadingSupervisors = false;
       });
     } catch (e) {
@@ -59,7 +61,7 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
         _isLoadingSupervisors = false;
       });
       if (mounted) {
-        ErrorHandler.showError(context, 'Gagal memuat daftar atasan: ${e.toString()}');
+        ErrorHandler.showErrorSnackBar(context, 'Gagal memuat daftar atasan: ${e.toString()}');
       }
     }
   }
@@ -224,7 +226,7 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
         const Text('Kategori', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         DropdownButtonFormField<LeaveCategory>(
-          value: _selectedCategory,
+          initialValue: _selectedCategory,
           decoration: InputDecoration(
             prefixIcon: const Icon(Icons.label),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -390,7 +392,7 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
         const Text('Kategori', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         DropdownButtonFormField<LeaveCategory>(
-          value: _selectedCategory,
+          initialValue: _selectedCategory,
           decoration: InputDecoration(
             prefixIcon: const Icon(Icons.label),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -529,7 +531,7 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
             _isLoadingSupervisors
                 ? const Center(child: CircularProgressIndicator())
                 : DropdownButtonFormField<String>(
-                    value: _selectedSupervisor,
+                    initialValue: _selectedSupervisor,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.person),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
