@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'providers/auth_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/location_provider.dart';
@@ -16,6 +17,9 @@ void main() async {
   debugPrint('Flutter binding initialized');
   
   try {
+    await initializeDateFormatting('id_ID', null);
+    debugPrint('Date formatting initialized');
+    
     await SecureStorageService().init();
     debugPrint('SecureStorageService initialized');
     

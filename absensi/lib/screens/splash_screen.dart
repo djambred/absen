@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -25,6 +26,22 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkAndRequestPermissions() async {
     try {
       debugPrint('Splash: Starting permission check');
+      
+      // Skip permission checks on desktop platforms (Linux, Windows, macOS)
+      if (defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS) {
+        debugPrint('Splash: Desktop platform detected, skipping permission checks');
+        setState(() {
+          _statusMessage = 'Memuat aplikasi...';
+          _permissionsGranted = true;
+        });
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          widget.onComplete();
+        }
+        return;
+      }
       
       if (!mounted) {
         debugPrint('Splash: Widget not mounted, aborting');

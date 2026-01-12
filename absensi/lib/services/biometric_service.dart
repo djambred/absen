@@ -13,6 +13,14 @@ class BiometricService {
   
   // Check if device supports biometric
   Future<bool> canUseBiometric() async {
+    // Skip on desktop platforms
+    if (defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      debugPrint('BiometricService: Desktop platform - biometric not supported');
+      return false;
+    }
+    
     try {
       debugPrint('BiometricService: Checking if device can use biometric...');
       final canCheck = await _localAuth.canCheckBiometrics;
@@ -109,8 +117,13 @@ class BiometricService {
   
   // Check if biometric login is enabled
   Future<bool> isBiometricEnabled() async {
-    final enabled = await _storage.read(key: _biometricEnabledKey);
-    return enabled == 'true';
+    try {
+      final enabled = await _storage.read(key: _biometricEnabledKey);
+      return enabled == 'true';
+    } catch (e) {
+      debugPrint('BiometricService: Error reading biometric enabled status: $e');
+      return false;
+    }
   }
   
   // Enable biometric login and save credentials
