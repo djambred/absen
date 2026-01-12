@@ -32,6 +32,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final leaveProvider = context.watch<LeaveProvider>();
     final user = authProvider.user;
 
+    // Check if user can apply for annual leave (worked for 1+ year)
+    final canApplyForCuti = user != null && 
+        DateTime.now().difference(user.createdAt).inDays >= 365;
+    final monthsWorked = user != null 
+        ? (DateTime.now().difference(user.createdAt).inDays / 30).floor()
+        : 0;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Absensi MNC'),
@@ -140,22 +147,49 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const LeaveSubmissionScreen(
-                            initialLeaveType: LeaveType.cuti,
+                  child: Tooltip(
+                    message: !canApplyForCuti 
+                        ? 'Cuti tahunan dapat diajukan setelah bekerja minimal 1 tahun (saat ini: $monthsWorked bulan)'
+                        : 'Ajukan cuti tahunan',
+                    child: ElevatedButton(
+                      onPressed: !canApplyForCuti ? null : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LeaveSubmissionScreen(
+                              initialLeaveType: LeaveType.cuti,
+                            ),
                           ),
+                        ).then((_) {
+                          leaveProvider.refresh();
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: !canApplyForCuti ? Colors.grey[300] : Colors.pink[400],
+                        foregroundColor: !canApplyForCuti ? Colors.grey[600] : Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ).then((_) {
-                        leaveProvider.refresh();
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.pink[400],
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.beach_access, size: 28),
+                          SizedBox(height: 4),
+                          Text(
+                            'Cuti',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          if (!canApplyForCuti)
+                            Text(
+                              '${monthsWorked}/12 bulan',
+                              style: TextStyle(fontSize: 9),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
