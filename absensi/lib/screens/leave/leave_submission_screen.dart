@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../models/leave_model.dart';
 import '../../providers/leave_provider.dart';
+import '../../services/api_service.dart';
 import '../../utils/error_handler.dart';
 
 class LeaveSubmissionScreen extends StatefulWidget {
@@ -28,7 +29,9 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
   TimeOfDay? _endTime;
   File? _attachmentFile;
   String? _selectedSupervisor;
+  List<Map<String, dynamic>> _supervisors = [];
   bool _isSubmitting = false;
+  bool _isLoadingSupervisors = false;
 
   @override
   void initState() {
@@ -36,6 +39,29 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
     _selectedType = widget.initialLeaveType;
     _startTime = const TimeOfDay(hour: 8, minute: 0);
     _endTime = const TimeOfDay(hour: 17, minute: 0);
+    _loadSupervisors();
+  }
+
+  Future<void> _loadSupervisors() async {
+    setState(() {
+      _isLoadingSupervisors = true;
+    });
+
+    try {
+      final apiService = ApiService();
+      final result = await apiService.getSupervisors();
+      setState(() {
+        _supervisors = List<Map<String, dynamic>>.from(result['supervisors']);
+        _isLoadingSupervisors = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingSupervisors = false;
+      });
+      if (mounted) {
+        ErrorHandler.showError(context, 'Gagal memuat daftar atasan: ${e.toString()}');
+      }
+    }
   }
 
   @override
@@ -135,6 +161,7 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
         startDate: _startDate!,
         endDate: _endDate!,
         reason: _reasonController.text.trim(),
+        supervisorId: _selectedSupervisor,
         attachmentPath: _attachmentFile?.path,
       );
 
@@ -499,20 +526,40 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
             const SizedBox(height: 16),
             const Text('Atasan untuk Persetujuan', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: _selectedSupervisor,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.person),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
-              hint: const Text('Pilih atasan'),
-              items: ['Supervisor 1', 'Supervisor 2', 'Manager']
-                  .map((sup) => DropdownMenuItem(value: sup, child: Text(sup)))
-                  .toList(),
-              onChanged: (value) => setState(() => _selectedSupervisor = value),
-              validator: (value) => value == null ? 'Pilih atasan' : null,
-            ),
+            _isLoadingSupervisors
+                ? const Center(child: CircularProgressIndicator())
+                : DropdownButtonFormField<String>(
+                    value: _selectedSupervisor,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.person),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                    hint: const Text('Pilih atasan'),
+                    items: _supervisors.isEmpty
+                        ? [const DropdownMenuItem(value: null, child: Text('Tidak ada atasan tersedia'))]
+                        : _supervisors.map((supervisor) {
+                            return DropdownMenuItem<String>(
+                              value: supervisor['id'],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    supervisor['name'],
+                                    style: const TextStyle(fontWeight: FontWeight.w500),
+                                  ),
+                                  Text(
+                                    '${supervisor['nip']} - ${supervisor['department'] ?? 'N/A'}',
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                    onChanged: _supervisors.isEmpty ? null : (value) => setState(() => _selectedSupervisor = value),
+                    validator: (value) => value == null ? 'Pilih atasan' : null,
+                  ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _isSubmitting ? null : _submitLeave,

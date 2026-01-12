@@ -39,6 +39,33 @@ async def get_leave_quota(
         raise HTTPException(status_code=500, detail=f"Error getting quota: {str(e)}")
 
 
+@router.get("/supervisors")
+async def get_supervisors(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get list of supervisors/managers for leave approval"""
+    try:
+        # Get all users who can be supervisors (kepala/manager roles)
+        supervisors = db.query(User).filter(
+            User.is_active == True,
+            User.id != current_user.id,  # Exclude current user
+        ).all()
+        
+        result = []
+        for supervisor in supervisors:
+            result.append({
+                "id": supervisor.id,
+                "name": supervisor.name,
+                "nip": supervisor.nip,
+                "department": supervisor.department,
+            })
+        
+        return {"supervisors": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting supervisors: {str(e)}")
+
+
 @router.get("/list")
 async def get_leaves(
     db: Session = Depends(get_db),
@@ -83,12 +110,19 @@ async def submit_leave(
     start_date: str = Form(...),
     end_date: str = Form(...),
     reason: str = Form(...),
+    supervisor_id: Optional[str] = Form(None),
     attachment: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Submit a new leave request"""
     try:
+        # Validate supervisor if provided
+        if supervisor_id:
+            supervisor = db.query(User).filter(User.id == supervisor_id).first()
+            if not supervisor:
+                raise HTTPException(status_code=400, detail="Atasan tidak ditemukan")
+        
         # Parse leave type and category
         try:
             leave_type = LeaveType(type)
@@ -163,6 +197,7 @@ async def submit_leave(
             total_days=total_days,
             reason=reason.strip(),
             attachment_path=attachment_path,
+            supervisor_id=supervisor_id,  # Add supervisor_id
             status=LeaveStatus.PENDING
         )
         

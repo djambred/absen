@@ -235,12 +235,23 @@ class ApiService {
     }
   }
   
+  Future<List<dynamic>> getSupervisors() async {
+    try {
+      final response = await _dio.get('/leave/supervisors');
+      return response.data['supervisors'] ?? [];
+    } catch (e) {
+      debugPrint('Get supervisors error: $e');
+      return [];
+    }
+  }
+  
   Future<Map<String, dynamic>> submitLeave({
     required String leaveType,
     required String category,
     required DateTime startDate,
     required DateTime endDate,
     required String reason,
+    String? supervisorId,
     String? attachmentPath,
   }) async {
     try {
@@ -251,6 +262,10 @@ class ApiService {
         'end_date': endDate.toIso8601String(),
         'reason': reason,
       });
+      
+      if (supervisorId != null) {
+        formData.fields.add(MapEntry('supervisor_id', supervisorId));
+      }
       
       if (attachmentPath != null) {
         formData.files.add(
@@ -264,7 +279,7 @@ class ApiService {
         );
       }
       
-      debugPrint('Submit leave request: type=$leaveType, category=$category');
+      debugPrint('Submit leave request: type=$leaveType, category=$category, supervisor=$supervisorId');
       final response = await _dio.post('/leave/submit', data: formData);
       debugPrint('Submit leave response: ${response.statusCode}');
       return Map<String, dynamic>.from(response.data);

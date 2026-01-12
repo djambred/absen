@@ -71,6 +71,7 @@ class LeaveProvider with ChangeNotifier {
     required DateTime startDate,
     required DateTime endDate,
     required String reason,
+    String? supervisorId,
     String? attachmentPath,
   }) async {
     _isLoading = true;
@@ -83,6 +84,7 @@ class LeaveProvider with ChangeNotifier {
         startDate: startDate,
         endDate: endDate,
         reason: reason,
+        supervisorId: supervisorId,
         attachmentPath: attachmentPath,
       );
 
