@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/biometric_service.dart';
+import '../../utils/error_handler.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -245,23 +246,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         
         if (mounted) {
           setState(() => _isBiometricLoading = false);
-          
-          String errorMessage = 'Login gagal';
-          if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
-            errorMessage = 'Email atau password salah. Silakan aktifkan ulang biometrik di Profile.';
-          } else if (e.toString().contains('DioException') || e.toString().contains('SocketException')) {
-            errorMessage = 'Tidak dapat terhubung ke server';
-          } else {
-            errorMessage = 'Login gagal: ${e.toString()}';
-          }
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
-            ),
-          );
+          ErrorHandler.showErrorDialog(context, e);
         }
       }
       
@@ -270,14 +255,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       debugPrint('Biometric login unexpected error: $e');
       if (mounted) {
         setState(() => _isBiometricLoading = false);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        ErrorHandler.showErrorDialog(context, e);
       }
     }
   }
@@ -307,23 +285,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Login gagal';
-        
-        if (e.toString().contains('401')) {
-          errorMessage = 'Email atau password salah';
-        } else if (e.toString().contains('DioException')) {
-          errorMessage = 'Tidak dapat terhubung ke server';
-        } else {
-          errorMessage = 'Login gagal: ${e.toString()}';
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        ErrorHandler.showErrorDialog(context, e);
       }
     }
   }

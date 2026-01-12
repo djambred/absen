@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/biometric_service.dart';
+import '../../utils/error_handler.dart';
 import '../history/attendance_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -39,11 +40,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     if (!_canUseBiometric) {
       debugPrint('Device does not support biometric');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Perangkat tidak mendukung biometrik'),
-          backgroundColor: Colors.red,
-        ),
+      ErrorHandler.showErrorSnackBar(
+        context,
+        'Perangkat tidak mendukung biometrik atau belum ada sidik jari/wajah yang terdaftar',
       );
       return;
     }
@@ -151,11 +150,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             debugPrint('Error stack trace: ${StackTrace.current}');
             setState(() => _isLoading = false);
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Gagal menyimpan kredensial: ${e.toString()}'),
-                  backgroundColor: Colors.red,
-                ),
+              ErrorHandler.showErrorDialog(
+                context,
+                e,
+                onRetry: () => _toggleBiometric(value),
               );
             }
           }
@@ -183,11 +181,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal mengubah pengaturan: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.showErrorDialog(
+          context,
+          e,
+          onRetry: () => _toggleBiometric(value),
         );
       }
     }
@@ -318,6 +315,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
 
                 if (confirm == true && mounted) {
+                  // Clear all provider data before logout
+                  context.read<AttendanceProvider>().clear();
+                  context.read<LeaveProvider>().clear();
+                  
                   await authProvider.logout();
                 }
               },

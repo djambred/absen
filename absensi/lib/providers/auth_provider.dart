@@ -79,5 +79,7 @@ class AuthProvider with ChangeNotifier {
     _user = null;
     _isAuthenticated = false;
     notifyListeners();
+    
+    // Note: Providers will be cleared by calling code
   }
 }

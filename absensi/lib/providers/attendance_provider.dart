@@ -1,11 +1,15 @@
 import 'package:flutter/foundation.dart';
 import '../models/attendance_model.dart';
 import '../services/api_service.dart';
+import '../services/holiday_service.dart';
+import '../services/notification_service.dart';
 
 class AttendanceProvider with ChangeNotifier {
   Attendance? _todayAttendance;
   List<Attendance> _history = [];
   bool _isLoading = false;
+  final HolidayService _holidayService = HolidayService();
+  final NotificationService _notificationService = NotificationService();
 
   Attendance? get todayAttendance => _todayAttendance;
   List<Attendance> get history => _history;
@@ -84,6 +88,10 @@ class AttendanceProvider with ChangeNotifier {
       _todayAttendance = Attendance.fromJson(response);
       _isLoading = false;
       notifyListeners();
+      
+      // Show notification
+      await _notificationService.showCheckOutNotification();
+      
       return true;
     } catch (e) {
       _isLoading = false;
@@ -99,6 +107,13 @@ class AttendanceProvider with ChangeNotifier {
     try {
       final response = await _apiService.getAttendanceHistory();
       _history = response.map((e) => Attendance.fromJson(e)).toList();
+      
+      // Load holidays for years in history
+      final years = _history.map((a) => a.checkInTime.year).toSet();
+      for (var year in years) {
+        await _holidayService.getHolidays(year);
+      }
+      
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -106,5 +121,33 @@ class AttendanceProvider with ChangeNotifier {
       notifyListeners();
       debugPrint('Load history error: $e');
     }
+  }
+  
+  /// Check if a date is a holiday
+  Future<bool> isHoliday(DateTime date) async {
+    return await _holidayService.isHoliday(date);
+  }
+  
+  /// Get holiday name for a date
+  Future<String?> getHolidayName(DateTime date) async {
+    return await _holidayService.getHolidayName(date);
+  }
+  
+  /// Check if date is weekend
+  bool isWeekend(DateTime date) {
+    return _holidayService.isWeekend(date);
+  }
+  
+  /// Check if date is non-working day (weekend or holiday)
+  Future<bool> isNonWorkingDay(DateTime date) async {
+    return await _holidayService.isNonWorkingDay(date);
+  }
+  
+  /// Clear all data (called on logout)
+  void clear() {
+    _todayAttendance = null;
+    _history = [];
+    _isLoading = false;
+    notifyListeners();
   }
 }

@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/attendance_provider.dart';
 import 'providers/location_provider.dart';
+import 'providers/leave_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/secure_storage_service.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   debugPrint('=== APP START ===');
@@ -16,8 +18,11 @@ void main() async {
   try {
     await SecureStorageService().init();
     debugPrint('SecureStorageService initialized');
+    
+    await NotificationService().initialize();
+    debugPrint('NotificationService initialized');
   } catch (e) {
-    debugPrint('Error initializing SecureStorageService: $e');
+    debugPrint('Error initializing services: $e');
   }
   
   debugPrint('Running app...');
@@ -35,6 +40,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProvider(create: (_) => LeaveProvider()),
       ],
       child: MaterialApp(
         title: 'Absen MNC University',

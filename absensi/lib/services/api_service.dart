@@ -213,4 +213,71 @@ class ApiService {
     final response = await _dio.get('/attendance/history', queryParameters: params);
     return response.data['data'];
   }
+  
+  // Leave/Cuti
+  Future<Map<String, dynamic>?> getLeaveQuota() async {
+    try {
+      final response = await _dio.get('/leave/quota');
+      return response.data;
+    } catch (e) {
+      debugPrint('Get leave quota error: $e');
+      return null;
+    }
+  }
+  
+  Future<List<dynamic>> getLeaves() async {
+    try {
+      final response = await _dio.get('/leave/list');
+      return response.data['leaves'] ?? [];
+    } catch (e) {
+      debugPrint('Get leaves error: $e');
+      return [];
+    }
+  }
+  
+  Future<Map<String, dynamic>> submitLeave({
+    required String leaveType,
+    required String category,
+    required DateTime startDate,
+    required DateTime endDate,
+    required String reason,
+    String? attachmentPath,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'type': leaveType,
+        'category': category,
+        'start_date': startDate.toIso8601String(),
+        'end_date': endDate.toIso8601String(),
+        'reason': reason,
+      });
+      
+      if (attachmentPath != null) {
+        formData.files.add(
+          MapEntry(
+            'attachment',
+            await MultipartFile.fromFile(
+              attachmentPath,
+              filename: 'attachment.jpg',
+            ),
+          ),
+        );
+      }
+      
+      debugPrint('Submit leave request: type=$leaveType, category=$category');
+      final response = await _dio.post('/leave/submit', data: formData);
+      debugPrint('Submit leave response: ${response.statusCode}');
+      return Map<String, dynamic>.from(response.data);
+    } on DioException catch (e) {
+      debugPrint('Submit leave DioException: ${e.response?.statusCode} - ${e.response?.data}');
+      if (e.response?.data != null && e.response?.data is Map) {
+        final detail = e.response?.data['detail'];
+        throw Exception(detail ?? 'Gagal mengajukan cuti/izin');
+      }
+      throw Exception('Koneksi ke server gagal: ${e.message}');
+    } catch (e) {
+      debugPrint('Submit leave error: $e');
+      rethrow;
+    }
+  }
 }

@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/camera_service.dart';
+import '../../utils/error_handler.dart';
 import 'dart:io';
 
 class CheckInScreen extends StatefulWidget {
@@ -44,20 +45,36 @@ class _CheckInScreenState extends State<CheckInScreen> {
         setState(() {});
       }
     } catch (e) {
-      _showError('Gagal menginisialisasi kamera: $e');
+      if (mounted) {
+        ErrorHandler.showErrorDialog(
+          context,
+          'Gagal menginisialisasi kamera. Pastikan aplikasi memiliki izin kamera.',
+          onRetry: _initCamera,
+        );
+      }
     }
   }
 
   Future<void> _checkLocation() async {
-    await _locationProvider.checkLocation();
-    if (mounted) {
-      setState(() {});
+    try {
+      await _locationProvider.checkLocation();
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorHandler.showErrorDialog(
+          context,
+          e,
+          onRetry: _checkLocation,
+        );
+      }
     }
   }
 
   Future<void> _takePicture() async {
     if (_controller == null || !_controller!.value.isInitialized) {
-      _showError('Kamera belum siap');
+      ErrorHandler.showErrorSnackBar(context, 'Kamera belum siap');
       return;
     }
 
@@ -73,7 +90,13 @@ class _CheckInScreenState extends State<CheckInScreen> {
       });
     } catch (e) {
       setState(() => _isProcessing = false);
-      _showError('Gagal mengambil foto: $e');
+      if (mounted) {
+        ErrorHandler.showErrorDialog(
+          context,
+          e,
+          onRetry: _takePicture,
+        );
+      }
     }
   }
 
@@ -84,9 +107,9 @@ class _CheckInScreenState extends State<CheckInScreen> {
       final original = img.decodeImage(bytes);
       if (original == null) return null;
 
-      // Define guide box as centered with 70% width and 60% height of the image
-      final guideW = (original.width * 0.7).round();
-      final guideH = (original.height * 0.6).round();
+      // Define guide box as centered with 85% width and 80% height of the image (more zoom out)
+      final guideW = (original.width * 0.85).round();
+      final guideH = (original.height * 0.80).round();
       final left = ((original.width - guideW) / 2).round();
       final top = ((original.height - guideH) / 2).round();
 
@@ -110,12 +133,21 @@ class _CheckInScreenState extends State<CheckInScreen> {
 
   Future<void> _submit() async {
     if (_photoPath == null) {
-      _showError('Silakan ambil foto terlebih dahulu');
+      ErrorHandler.showErrorSnackBar(context, 'Silakan ambil foto terlebih dahulu');
       return;
     }
     
     if (!_locationProvider.isValidLocation) {
-      _showError('Lokasi Anda tidak valid untuk absensi');
+      ErrorHandler.showErrorDialog(
+        context,
+        'Lokasi Anda tidak valid untuk absensi. Pastikan Anda berada di area kantor.',
+        onRetry: () async {
+          await _checkLocation();
+          if (_locationProvider.isValidLocation) {
+            _submit();
+          }
+        },
+      );
       return;
     }
 
@@ -155,24 +187,19 @@ class _CheckInScreenState extends State<CheckInScreen> {
         );
       }
     } catch (e) {
-      final errorMessage = e.toString().replaceAll('Exception: ', '');
-      _showError('Gagal ${widget.isCheckIn ? "check-in" : "check-out"}: $errorMessage');
+      if (mounted) {
+        ErrorHandler.showErrorDialog(
+          context,
+          e,
+          onRetry: _submit,
+        );
+      }
       debugPrint('Submit error: $e');
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);
       }
     }
-  }
-
-  void _showError(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
 
   @override
@@ -239,10 +266,10 @@ class _CheckInScreenState extends State<CheckInScreen> {
                                     builder: (context, constraints) {
                                       final w = constraints.maxWidth;
                                       final h = constraints.maxHeight;
-                                      // Responsive guide box: smaller on compact heights
+                                      // Responsive guide box: larger for zoom out effect
                                       final isCompact = h < 260;
-                                      final boxW = w * (isCompact ? 0.62 : 0.7);
-                                      final boxH = h * (isCompact ? 0.52 : 0.6);
+                                      final boxW = w * (isCompact ? 0.78 : 0.85);
+                                      final boxH = h * (isCompact ? 0.70 : 0.80);
                                       final left = (w - boxW) / 2;
                                       final top = (h - boxH) / 2;
                                       return Stack(
