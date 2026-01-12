@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/leave_provider.dart';
+import '../../models/leave_model.dart';
 import '../history/attendance_history_screen.dart';
 import '../leave/leave_submission_screen.dart';
-import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -126,26 +127,117 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.all(16),
               ),
             ),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const LeaveSubmissionScreen(),
-                  ),
-                ).then((_) {
-                  // Refresh after submission
-                  leaveProvider.refresh();
-                });
-              },
-              icon: const Icon(Icons.event_note),
-              label: const Text('Pengajuan Cuti/Izin'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
+            const SizedBox(height: 16),
+            
+            // Leave Submission Buttons
+            Text(
+              'Pengajuan',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LeaveSubmissionScreen(),
+                        ),
+                      ).then((_) {
+                        leaveProvider.refresh();
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.pink[400],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.beach_access, size: 28),
+                        SizedBox(height: 4),
+                        Text(
+                          'Cuti',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LeaveSubmissionScreen(),
+                        ),
+                      ).then((_) {
+                        leaveProvider.refresh();
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.blue[400],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.exit_to_app, size: 28),
+                        SizedBox(height: 4),
+                        Text(
+                          'Izin',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LeaveSubmissionScreen(),
+                        ),
+                      ).then((_) {
+                        leaveProvider.refresh();
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.yellow[700],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.local_hospital, size: 28),
+                        SizedBox(height: 4),
+                        Text(
+                          'Sakit',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -181,8 +273,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Chip(
               label: Text(attendance.statusDisplay),
               backgroundColor: attendance.status == 'on_time' 
-                  ? Colors.green.shade100 
-                  : Colors.orange.shade100,
+                  ? Colors.green[100] 
+                  : Colors.orange[100],
             ),
           ],
         ),
@@ -215,10 +307,10 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: attendance.canCheckOut ? Colors.green.shade50 : Colors.orange.shade50,
+              color: attendance.canCheckOut ? Colors.green[50] : Colors.orange[50],
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: attendance.canCheckOut ? Colors.green.shade300 : Colors.orange.shade300,
+                color: attendance.canCheckOut ? Colors.green[300]! : Colors.orange[300]!,
               ),
             ),
             child: Row(
@@ -240,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: attendance.canCheckOut ? Colors.green.shade900 : Colors.orange.shade900,
+                          color: attendance.canCheckOut ? Colors.green[900]! : Colors.orange[900]!,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -260,14 +352,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLeaveQuotaCard(LeaveProvider leaveProvider) {
-    final quota = leaveProvider.quota;
+    final quota = leaveProvider.currentQuota;
     if (quota == null) {
       return const SizedBox.shrink();
     }
 
-    final remaining = quota.remaining;
-    final used = quota.used;
-    final total = quota.totalDays;
+    final remaining = quota.remainingQuota;
+    final used = quota.usedQuota;
+    final total = quota.totalQuota;
     final percentage = total > 0 ? remaining / total : 0.0;
     
     return Card(
@@ -283,10 +375,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: Colors.blue[50],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.calendar_month, color: Colors.blue.shade700, size: 24),
+                  child: Icon(Icons.calendar_month, color: Colors.blue[700]!, size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -299,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Text(
                         'Tahun ${quota.year}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -312,13 +404,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: remaining > 6 ? Colors.green.shade700 : 
-                               remaining > 3 ? Colors.orange.shade700 : Colors.red.shade700,
+                        color: remaining > 6 ? Colors.green[700]! : 
+                               remaining > 3 ? Colors.orange[700]! : Colors.red[700]!,
                       ),
                     ),
                     Text(
                       'dari $total hari',
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -330,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: LinearProgressIndicator(
                 value: percentage,
                 minHeight: 8,
-                backgroundColor: Colors.grey.shade200,
+                backgroundColor: Colors.grey[200],
                 valueColor: AlwaysStoppedAnimation<Color>(
                   remaining > 6 ? Colors.green : 
                   remaining > 3 ? Colors.orange : Colors.red,
@@ -343,14 +435,14 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   'Terpakai: $used hari',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700]!),
                 ),
                 Text(
                   '${(percentage * 100).toStringAsFixed(0)}%',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
+                    color: Colors.grey[700]!,
                   ),
                 ),
               ],
@@ -371,13 +463,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     IconData categoryIcon;
-    Color categoryColor;
+    MaterialColor categoryColor;
     String categoryLabel;
 
-    if (activeLeave.type == LeaveType.izin) {
-      if (activeLeave.category == LeaveCategory.dinasLuar) {
+    if (activeLeave.leaveType == 'izin') {
+      if (activeLeave.category == 'dinas_luar') {
         categoryIcon = Icons.business_center;
-        categoryColor = Colors.purple;
+        categoryColor = Colors.blue;
         categoryLabel = 'Dinas Luar';
       } else {
         categoryIcon = Icons.exit_to_app;
@@ -392,10 +484,10 @@ class _HomeScreenState extends State<HomeScreen> {
     
     return Card(
       elevation: 2,
-      color: categoryColor.shade50,
+      color: categoryColor[50],
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: categoryColor.shade200, width: 1),
+        side: BorderSide(color: categoryColor[200]!, width: 1),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -407,10 +499,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: categoryColor.shade100,
+                    color: categoryColor[100],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(categoryIcon, color: categoryColor.shade700, size: 24),
+                  child: Icon(categoryIcon, color: categoryColor[700]!, size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -422,7 +514,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: categoryColor.shade900,
+                          color: categoryColor[900]!,
                         ),
                       ),
                       const Text(
@@ -435,7 +527,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: categoryColor.shade200,
+                    color: categoryColor[100],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -443,7 +535,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: categoryColor.shade900,
+                      color: categoryColor[900]!,
                     ),
                   ),
                 ),
@@ -460,7 +552,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 16, color: Colors.grey.shade600),
+                      Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
                       const SizedBox(width: 8),
                       Text(
                         '${dateFormat.format(activeLeave.startDate)} - ${dateFormat.format(activeLeave.endDate)}',
@@ -473,12 +565,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline, size: 16, color: Colors.grey.shade600),
+                        Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             activeLeave.reason,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                            style: TextStyle(fontSize: 12, color: Colors.grey[700]!),
                           ),
                         ),
                       ],

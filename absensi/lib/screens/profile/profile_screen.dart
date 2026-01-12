@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/attendance_provider.dart';
+import '../../providers/leave_provider.dart';
 import '../../services/biometric_service.dart';
 import '../../utils/error_handler.dart';
 import '../history/attendance_history_screen.dart';
