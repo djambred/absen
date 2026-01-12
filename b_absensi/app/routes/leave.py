@@ -81,20 +81,20 @@ async def get_leaves(
         for leave in leaves:
             result.append({
                 "id": leave.id,
-                "type": leave.type.value,
-                "category": leave.category.value,
+                "leave_type": leave.leave_type,
+                "category": leave.category,
                 "start_date": leave.start_date.isoformat(),
                 "end_date": leave.end_date.isoformat(),
                 "total_days": leave.total_days,
                 "reason": leave.reason,
-                "status": leave.status.value,
+                "status": leave.status,
                 "attachment_url": leave.attachment_url,
-                "approval_level_1_by": leave.approval_level_1_by,
-                "approval_level_1_at": leave.approval_level_1_at.isoformat() if leave.approval_level_1_at else None,
-                "approval_level_1_notes": leave.approval_level_1_notes,
-                "approval_level_2_by": leave.approval_level_2_by,
-                "approval_level_2_at": leave.approval_level_2_at.isoformat() if leave.approval_level_2_at else None,
-                "approval_level_2_notes": leave.approval_level_2_notes,
+                "approved_by_level_1": leave.approved_by_level_1,
+                "approved_at_level_1": leave.approved_at_level_1.isoformat() if leave.approved_at_level_1 else None,
+                "approval_notes_level_1": leave.approval_notes_level_1,
+                "approved_by_level_2": leave.approved_by_level_2,
+                "approved_at_level_2": leave.approved_at_level_2.isoformat() if leave.approved_at_level_2 else None,
+                "approval_notes_level_2": leave.approval_notes_level_2,
                 "created_at": leave.created_at.isoformat(),
             })
         
@@ -253,17 +253,17 @@ async def approve_leave(
         
         if level == 1:
             # Supervisor approval
-            leave.approval_level_1_by = current_user.id
-            leave.approval_level_1_at = now
-            leave.approval_level_1_notes = notes
+            leave.approved_by_level_1 = current_user.id
+            leave.approved_at_level_1 = now
+            leave.approval_notes_level_1 = notes
         elif level == 2:
             # HR approval
-            if not leave.approval_level_1_at:
+            if not leave.approved_at_level_1:
                 raise HTTPException(status_code=400, detail="Supervisor approval required first")
             
-            leave.approval_level_2_by = current_user.id
-            leave.approval_level_2_at = now
-            leave.approval_level_2_notes = notes
+            leave.approved_by_level_2 = current_user.id
+            leave.approved_at_level_2 = now
+            leave.approval_notes_level_2 = notes
             leave.status = LeaveStatus.APPROVED
         else:
             raise HTTPException(status_code=400, detail="Invalid approval level")
@@ -305,7 +305,7 @@ async def reject_leave(
             LeaveQuotaService.restore_quota(db, leave.user_id, leave.total_days)
         
         leave.status = LeaveStatus.REJECTED
-        leave.approval_level_1_notes = notes
+        leave.rejection_reason = notes
         
         db.commit()
         
