@@ -42,8 +42,13 @@ class LeaveProvider with ChangeNotifier {
       
       final response = await _apiService.getLeaves();
       _leaves = response.map((e) => Leave.fromJson(e)).toList();
+
+      if (_leaves.isEmpty) {
+        _activeLeave = null;
+        return;
+      }
       
-      // Check for active leave (dinas luar/keperluan pribadi)
+      // Prefer active dinas luar/keperluan pribadi if present; otherwise any active leave
       _activeLeave = _leaves.firstWhere(
         (leave) => leave.isActive && (leave.isDinasLuar || leave.isKeperluanPribadi),
         orElse: () => _leaves.firstWhere(

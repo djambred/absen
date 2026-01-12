@@ -262,6 +262,74 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            // Info UI for leave types
+            Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.pink[50],
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.pink[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.beach_access, color: Colors.pink),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Cuti Tahunan — ajukan setelah 12 bulan masa kerja, gunakan untuk cuti berbayar.',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.blue[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.exit_to_app, color: Colors.blue),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Izin / Dinas Luar — pilih sesuai keperluan pribadi atau tugas dinas.',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.yellow[50],
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.yellow[600]!),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.local_hospital, color: Colors.orange),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Sakit — unggah surat dokter bila ada untuk mempercepat approval.',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
