@@ -32,9 +32,9 @@ async def get_leave_quota(
         
         return {
             "year": quota.year,
-            "total_days": quota.total_days,
-            "used": quota.used,
-            "remaining": quota.remaining
+            "total_quota": quota.total_quota,
+            "used_quota": quota.used_quota,
+            "remaining_quota": quota.remaining_quota
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting quota: {str(e)}")

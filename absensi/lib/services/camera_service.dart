@@ -13,7 +13,7 @@ class CameraService {
 
     final controller = CameraController(
       frontCamera,
-      ResolutionPreset.high,
+      ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );

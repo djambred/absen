@@ -145,7 +145,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const LeaveSubmissionScreen(),
+                          builder: (_) => const LeaveSubmissionScreen(
+                            initialLeaveType: LeaveType.cuti,
+                          ),
                         ),
                       ).then((_) {
                         leaveProvider.refresh();
@@ -178,7 +180,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const LeaveSubmissionScreen(),
+                          builder: (_) => const LeaveSubmissionScreen(
+                            initialLeaveType: LeaveType.izin,
+                          ),
                         ),
                       ).then((_) {
                         leaveProvider.refresh();
@@ -211,7 +215,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const LeaveSubmissionScreen(),
+                          builder: (_) => const LeaveSubmissionScreen(
+                            initialLeaveType: LeaveType.sakit,
+                          ),
                         ),
                       ).then((_) {
                         leaveProvider.refresh();

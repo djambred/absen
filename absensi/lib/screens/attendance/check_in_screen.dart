@@ -107,9 +107,9 @@ class _CheckInScreenState extends State<CheckInScreen> {
       final original = img.decodeImage(bytes);
       if (original == null) return null;
 
-      // Define guide box as centered with 85% width and 80% height of the image (more zoom out)
-      final guideW = (original.width * 0.85).round();
-      final guideH = (original.height * 0.80).round();
+      // Define guide box as centered with 95% width and 90% height of the image (more zoom out)
+      final guideW = (original.width * 0.95).round();
+      final guideH = (original.height * 0.90).round();
       final left = ((original.width - guideW) / 2).round();
       final top = ((original.height - guideH) / 2).round();
 
@@ -268,8 +268,8 @@ class _CheckInScreenState extends State<CheckInScreen> {
                                       final h = constraints.maxHeight;
                                       // Responsive guide box: larger for zoom out effect
                                       final isCompact = h < 260;
-                                      final boxW = w * (isCompact ? 0.78 : 0.85);
-                                      final boxH = h * (isCompact ? 0.70 : 0.80);
+                                      final boxW = w * (isCompact ? 0.88 : 0.95);
+                                      final boxH = h * (isCompact ? 0.80 : 0.90);
                                       final left = (w - boxW) / 2;
                                       final top = (h - boxH) / 2;
                                       return Stack(
@@ -384,7 +384,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
                             )
                           : Image.file(
                               File(_photoPath!),
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                             ),
                     ),
                   ),

@@ -8,7 +8,9 @@ import '../../providers/leave_provider.dart';
 import '../../utils/error_handler.dart';
 
 class LeaveSubmissionScreen extends StatefulWidget {
-  const LeaveSubmissionScreen({super.key});
+  final LeaveType? initialLeaveType;
+  
+  const LeaveSubmissionScreen({super.key, this.initialLeaveType});
 
   @override
   State<LeaveSubmissionScreen> createState() => _LeaveSubmissionScreenState();
@@ -24,6 +26,12 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
   DateTime? _endDate;
   File? _attachmentFile;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedType = widget.initialLeaveType;
+  }
 
   @override
   void dispose() {
