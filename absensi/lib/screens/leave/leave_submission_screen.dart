@@ -155,6 +155,7 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
         }
       });
     }
+  }
 
   Future<void> _pickTime(BuildContext context, bool isStartTime) async {
     final picked = await showTimePicker(
