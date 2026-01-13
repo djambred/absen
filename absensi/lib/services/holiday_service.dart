@@ -15,8 +15,34 @@ class Holiday {
   });
 
   factory Holiday.fromJson(Map<String, dynamic> json) {
+    // Robust parsing for holiday_date which may be like '2026-06-1'
+    DateTime parsedDate;
+    final raw = json['holiday_date']?.toString() ?? '';
+    if (raw.isEmpty) {
+      // Fallback to a safe date if missing; caller should handle
+      parsedDate = DateTime.now();
+    } else {
+      try {
+        parsedDate = DateTime.parse(raw);
+      } catch (_) {
+        // Normalize: pad month/day to 2 digits, keep any time suffix
+        final match = RegExp(r"^(\d{4})-(\d{1,2})-(\d{1,2})(.*)$").firstMatch(raw);
+        if (match != null) {
+          final year = match.group(1)!;
+          final month = match.group(2)!;
+          final day = match.group(3)!;
+          final suffix = match.group(4)!; // may be empty or time part
+          final normalized = "$year-${month.padLeft(2, '0')}-${day.padLeft(2, '0')}$suffix";
+          parsedDate = DateTime.parse(normalized);
+        } else {
+          // As a last resort, try replacing single slashes or spaces
+          parsedDate = DateTime.parse(raw.replaceAll('/', '-'));
+        }
+      }
+    }
+
     return Holiday(
-      date: DateTime.parse(json['holiday_date']),
+      date: parsedDate,
       name: json['holiday_name'],
       isNational: json['is_national_holiday'] ?? false,
     );

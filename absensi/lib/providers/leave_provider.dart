@@ -14,7 +14,7 @@ class LeaveProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   
   int get remainingQuota => _currentQuota?.remainingQuota ?? 12;
-  bool get hasActiveLeave => _activeLeave != null;
+  bool get hasActiveLeave => _activeLeave?.isActive ?? false;
   
   // Check if user has any pending leave requests
   bool get hasPendingLeave => _leaves.any((leave) => leave.status == 'pending');
@@ -51,14 +51,17 @@ class LeaveProvider with ChangeNotifier {
         return;
       }
       
-      // Prefer active dinas luar/keperluan pribadi if present; otherwise any active leave
-      _activeLeave = _leaves.firstWhere(
-        (leave) => leave.isActive && (leave.isDinasLuar || leave.isKeperluanPribadi),
-        orElse: () => _leaves.firstWhere(
-          (leave) => leave.isActive,
-          orElse: () => _leaves.first,
-        ),
-      );
+      // Compute active leave only from approved/current leaves
+      final activeLeaves = _leaves.where((leave) => leave.isActive).toList();
+      if (activeLeaves.isEmpty) {
+        _activeLeave = null;
+      } else {
+        // Prefer active izin types if present; otherwise any active leave
+        _activeLeave = activeLeaves.firstWhere(
+          (leave) => leave.isDinasLuar || leave.isKeperluanPribadi,
+          orElse: () => activeLeaves.first,
+        );
+      }
     } catch (e) {
       debugPrint('Load leaves error: $e');
       _activeLeave = null;
