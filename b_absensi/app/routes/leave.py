@@ -81,6 +81,7 @@ async def get_leaves(
         for leave in leaves:
             result.append({
                 "id": leave.id,
+                "user_id": leave.user_id,
                 "leave_type": leave.leave_type,
                 "category": leave.category,
                 "start_date": leave.start_date.isoformat(),
@@ -95,7 +96,13 @@ async def get_leaves(
                 "approved_by_level_2": leave.approved_by_level_2,
                 "approved_at_level_2": leave.approved_at_level_2.isoformat() if leave.approved_at_level_2 else None,
                 "approval_notes_level_2": leave.approval_notes_level_2,
+                "rejected_by": leave.rejected_by,
+                "rejected_at": leave.rejected_at.isoformat() if leave.rejected_at else None,
+                "rejection_reason": leave.rejection_reason,
+                "deducted_from_quota": leave.deducted_from_quota,
+                "quota_year": leave.quota_year,
                 "created_at": leave.created_at.isoformat(),
+                "updated_at": leave.updated_at.isoformat(),
             })
         
         return {"leaves": result}

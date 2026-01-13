@@ -31,8 +31,14 @@ class HolidayService:
                 if isinstance(data, list):
                     for item in data:
                         try:
-                            holiday_date = date.fromisoformat(item['holiday_date'])
-                            holidays.add(holiday_date)
+                            holiday_date_str = item['holiday_date']
+                            # Normalize date format (handle single-digit days/months)
+                            parts = holiday_date_str.split('-')
+                            if len(parts) == 3:
+                                year_part, month_part, day_part = parts
+                                normalized = f"{year_part}-{month_part.zfill(2)}-{day_part.zfill(2)}"
+                                holiday_date = date.fromisoformat(normalized)
+                                holidays.add(holiday_date)
                         except (KeyError, ValueError) as e:
                             logger.warning(f"Error parsing holiday: {e}")
                 elif isinstance(data, dict):
@@ -41,8 +47,14 @@ class HolidayService:
                         if isinstance(value, list):
                             for item in value:
                                 try:
-                                    holiday_date = date.fromisoformat(item['holiday_date'])
-                                    holidays.add(holiday_date)
+                                    holiday_date_str = item['holiday_date']
+                                    # Normalize date format (handle single-digit days/months)
+                                    parts = holiday_date_str.split('-')
+                                    if len(parts) == 3:
+                                        year_part, month_part, day_part = parts
+                                        normalized = f"{year_part}-{month_part.zfill(2)}-{day_part.zfill(2)}"
+                                        holiday_date = date.fromisoformat(normalized)
+                                        holidays.add(holiday_date)
                                 except (KeyError, ValueError) as e:
                                     logger.warning(f"Error parsing holiday: {e}")
                 

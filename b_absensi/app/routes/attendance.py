@@ -40,20 +40,16 @@ def calculate_required_checkout(check_in_time: datetime) -> datetime:
     Calculate required checkout time based on check-in time (Jakarta timezone):
     - Check in <= 7:30 -> Check out at 17:00
     - Check in 8:00-10:00 -> Check out at 19:00
-    - Check in > 10:00 -> Not allowed
+    - Check in > 10:00 -> Check out at 19:00
     """
     check_in_hour = check_in_time.time()
     today = check_in_time.date()
     
     if check_in_hour <= time(7, 30):
         return TZ.localize(datetime.combine(today, time(17, 0)))
-    elif time(8, 0) <= check_in_hour <= time(10, 0):
-        return TZ.localize(datetime.combine(today, time(19, 0)))
     else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Check-in hanya diperbolehkan antara jam 07:00 - 10:00"
-        )
+        # All other times (8:00-10:00 or after 10:00) -> Check out at 19:00
+        return TZ.localize(datetime.combine(today, time(19, 0)))
 
 @router.post("/check-in", response_model=AttendanceResponse)
 async def check_in(
@@ -99,13 +95,9 @@ async def check_in(
     # Determine status
     if current_time <= time(7, 30):
         status_value = AttendanceStatus.ON_TIME
-    elif time(8, 0) <= current_time <= time(10, 0):
-        status_value = AttendanceStatus.LATE
     else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Check-in hanya diperbolehkan antara jam 07:00 - 10:00"
-        )
+        # Any check-in after 7:30 is marked as late
+        status_value = AttendanceStatus.LATE
     
     # Calculate required checkout time
     required_checkout = calculate_required_checkout(check_in_time)

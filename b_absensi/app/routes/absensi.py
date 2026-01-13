@@ -73,9 +73,10 @@ async def check_in(
     
     # Determine status based on check-in time
     check_in_hour_minute = now.time()
-    if check_in_hour_minute <= time(10, 0):
+    if check_in_hour_minute <= time(7, 30):
         attendance_status = "on_time"
     else:
+        # Any check-in after 7:30 is marked as late
         attendance_status = "late"
     
     # Create attendance record
