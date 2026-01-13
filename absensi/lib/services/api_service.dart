@@ -334,4 +334,14 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> getActiveLeaves() async {
+    try {
+      final response = await _dio.get('/leave/active-leaves');
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      debugPrint('Get active leaves error: $e');
+      rethrow;
+    }
+  }
 }

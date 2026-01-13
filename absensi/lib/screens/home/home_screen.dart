@@ -8,6 +8,7 @@ import '../../models/leave_model.dart';
 import '../history/attendance_history_screen.dart';
 import '../leave/leave_submission_screen.dart';
 import '../leave/leave_approval_screen.dart';
+import '../leave/active_leaves_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -136,6 +137,25 @@ class _HomeScreenState extends State<HomeScreen> {
               label: const Text('Riwayat Absensi'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.all(16),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // View Active Leaves Button
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ActiveLeavesScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.people),
+              label: const Text('Lihat Karyawan Sedang Cuti'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                foregroundColor: Colors.deepOrange,
               ),
             ),
             const SizedBox(height: 16),

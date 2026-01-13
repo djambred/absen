@@ -150,6 +150,57 @@ async def get_pending_approvals(
         raise HTTPException(status_code=500, detail=f"Error getting pending approvals: {str(e)}")
 
 
+@router.get("/active-leaves")
+async def get_active_leaves(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all currently active leaves (approved leaves happening today)"""
+    try:
+        from datetime import date
+        today = date.today()
+        
+        # Get leaves that are approved and currently active (today is between start and end date)
+        leaves = db.query(Leave).filter(
+            Leave.status == LeaveStatus.APPROVED,
+            Leave.start_date <= today,
+            Leave.end_date >= today
+        ).order_by(Leave.start_date).all()
+        
+        result = []
+        for leave in leaves:
+            # Get user info
+            user = db.query(User).filter(User.id == leave.user_id).first()
+            
+            # Get approver info
+            approved_by_name = None
+            if leave.approved_by_level_1:
+                approver = db.query(User).filter(User.id == leave.approved_by_level_1).first()
+                if approver:
+                    approved_by_name = approver.name
+            
+            result.append({
+                "id": leave.id,
+                "user_id": leave.user_id,
+                "user_name": user.name if user else "Unknown",
+                "user_nip": user.nip if user else "Unknown",
+                "user_department": user.department if user else "Unknown",
+                "leave_type": leave.leave_type,
+                "category": leave.category,
+                "start_date": leave.start_date.isoformat(),
+                "end_date": leave.end_date.isoformat(),
+                "total_days": leave.total_days,
+                "reason": leave.reason,
+                "status": leave.status,
+                "approved_by_name": approved_by_name,
+                "approved_at": leave.approved_at_level_1.isoformat() if leave.approved_at_level_1 else None,
+            })
+        
+        return {"active_leaves": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting active leaves: {str(e)}")
+
+
 @router.post("/submit")
 async def submit_leave(
     type: str = Form(...),
