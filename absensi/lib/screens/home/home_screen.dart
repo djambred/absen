@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/leave_provider.dart';
+import '../../services/api_service.dart';
 import '../../models/leave_model.dart';
 import '../history/attendance_history_screen.dart';
 import '../leave/leave_submission_screen.dart';
@@ -18,13 +19,33 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _hasPendingApprovals = false;
+  
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AttendanceProvider>().loadTodayAttendance();
       context.read<LeaveProvider>().refresh();
+      _checkPendingApprovals();
     });
+  }
+
+  Future<void> _checkPendingApprovals() async {
+    try {
+      final apiService = ApiService();
+      final response = await apiService.getPendingApprovals();
+      final pendingApprovals = response['pending_approvals'] as List;
+      
+      if (mounted) {
+        setState(() {
+          _hasPendingApprovals = pendingApprovals.isNotEmpty;
+        });
+      }
+    } catch (e) {
+      // Silently fail - user just won't see the button
+      debugPrint('Error checking pending approvals: $e');
+    }
   }
 
   @override
@@ -134,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
               icon: const Icon(Icons.history),
-              label: const Text('Riwayat Absensi'),
+              label: const Text('Riwayat'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.all(16),
               ),
@@ -718,9 +739,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildApprovalButton(BuildContext context, user) {
-    // Show approval button for supervisors (kepala IT, kepala divisi, etc)
-    // Check if user has "kepala" in their role name
-    if (user?.role == null || !user.role.toLowerCase().contains('kepala')) {
+    // Show approval button if user has pending approvals to review
+    // Previously we checked for "kepala" in role, but now we check if there are pending approvals
+    if (!_hasPendingApprovals) {
       return const SizedBox.shrink();
     }
 
@@ -735,7 +756,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(
                   builder: (_) => const LeaveApprovalScreen(),
                 ),
-              );
+              ).then((_) {
+                // Refresh when back from approval screen
+                _checkPendingApprovals();
+              });
             },
             icon: const Icon(Icons.approval, size: 24),
             label: const Text('Persetujuan Cuti/Izin'),

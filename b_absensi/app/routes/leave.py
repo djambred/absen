@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime, date
+from pydantic import BaseModel
 import os
 from pathlib import Path
 
@@ -18,6 +19,16 @@ router = APIRouter()
 # Ensure upload directory exists
 leave_uploads = Path(UPLOAD_DIR) / "leave_attachments"
 leave_uploads.mkdir(parents=True, exist_ok=True)
+
+
+# Pydantic schemas for request bodies
+class ApproveLeaveRequest(BaseModel):
+    level: int  # 1 for supervisor, 2 for HR
+    notes: Optional[str] = None
+
+
+class RejectLeaveRequest(BaseModel):
+    notes: str
 
 
 @router.get("/quota")
@@ -336,9 +347,8 @@ async def submit_leave(
 
 @router.post("/{leave_id}/approve")
 async def approve_leave(
-    leave_id: int,
-    level: int = Form(...),  # 1 for supervisor, 2 for HR
-    notes: Optional[str] = Form(None),
+    leave_id: str,
+    request: ApproveLeaveRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -354,26 +364,27 @@ async def approve_leave(
         from ..models.absensi import get_jakarta_time
         now = get_jakarta_time()
         
-        if level == 1:
+        if request.level == 1:
             # Supervisor approval
             leave.approved_by_level_1 = current_user.id
             leave.approved_at_level_1 = now
-            leave.approval_notes_level_1 = notes
-        elif level == 2:
+            leave.approval_notes_level_1 = request.notes
+            leave.status = LeaveStatus.APPROVED_BY_SUPERVISOR
+        elif request.level == 2:
             # HR approval
             if not leave.approved_at_level_1:
                 raise HTTPException(status_code=400, detail="Supervisor approval required first")
             
             leave.approved_by_level_2 = current_user.id
             leave.approved_at_level_2 = now
-            leave.approval_notes_level_2 = notes
-            leave.status = LeaveStatus.APPROVED
+            leave.approval_notes_level_2 = request.notes
+            leave.status = LeaveStatus.APPROVED_BY_HR
         else:
             raise HTTPException(status_code=400, detail="Invalid approval level")
         
         db.commit()
         
-        return {"message": f"Leave approved at level {level}"}
+        return {"message": f"Leave approved at level {request.level}"}
         
     except HTTPException:
         raise
@@ -384,8 +395,8 @@ async def approve_leave(
 
 @router.post("/{leave_id}/reject")
 async def reject_leave(
-    leave_id: int,
-    notes: str = Form(...),
+    leave_id: str,
+    request: RejectLeaveRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -408,7 +419,7 @@ async def reject_leave(
             LeaveQuotaService.restore_quota(db, leave.user_id, leave.total_days)
         
         leave.status = LeaveStatus.REJECTED
-        leave.rejection_reason = notes
+        leave.rejection_reason = request.notes
         
         db.commit()
         

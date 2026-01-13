@@ -40,7 +40,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat Absensi'),
+        title: const Text('Riwayat'),
       ),
       body: Consumer2<AttendanceProvider, LeaveProvider>(
         builder: (context, attendanceProvider, leaveProvider, _) {

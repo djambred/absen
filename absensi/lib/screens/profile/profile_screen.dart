@@ -273,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.history),
-                  title: const Text('Riwayat Absensi'),
+                  title: const Text('Riwayat'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     Navigator.push(
