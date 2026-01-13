@@ -132,6 +132,30 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
     }
   }
 
+  Future<void> _pickSakitDate(BuildContext context, bool isStartDate) async {
+    final now = DateTime.now();
+    // Allow selecting dates up to 30 days in the past for sick leave
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: isStartDate ? (_startDate ?? now) : (_endDate ?? _startDate ?? now),
+      firstDate: now.subtract(const Duration(days: 30)),
+      lastDate: now.add(const Duration(days: 365)),
+      locale: const Locale('id', 'ID'),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          _startDate = picked;
+          if (_endDate != null && _endDate!.isBefore(picked)) {
+            _endDate = null;
+          }
+        } else {
+          _endDate = picked;
+        }
+      });
+    }
+
   Future<void> _pickTime(BuildContext context, bool isStartTime) async {
     final picked = await showTimePicker(
       context: context,
@@ -470,7 +494,7 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
         const Text('Tanggal Mulai', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         InkWell(
-          onTap: () => _pickDate(context, true),
+          onTap: () => _pickSakitDate(context, true),
           child: InputDecorator(
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.calendar_today),
@@ -484,7 +508,7 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
         const Text('Tanggal Selesai', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         InkWell(
-          onTap: _startDate == null ? null : () => _pickDate(context, false),
+          onTap: _startDate == null ? null : () => _pickSakitDate(context, false),
           child: InputDecorator(
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.event),

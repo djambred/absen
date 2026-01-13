@@ -148,9 +148,11 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: Tooltip(
-                    message: 'Ajukan cuti tahunan',
+                    message: leaveProvider.hasPendingLeave 
+                        ? 'Tidak bisa mengajukan cuti sambil menunggu persetujuan'
+                        : 'Ajukan cuti tahunan',
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: leaveProvider.hasPendingLeave ? null : () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -186,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: leaveProvider.hasPendingLeave ? null : () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -221,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: leaveProvider.hasPendingLeave ? null : () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -538,13 +540,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActiveLeaveCard(LeaveProvider leaveProvider) {
-    if (!leaveProvider.hasActiveLeave) {
+    if (!leaveProvider.hasActiveLeave || leaveProvider.leaves.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final activeLeave = leaveProvider.leaves.firstWhere(
-      (leave) => leave.isActive,
-    );
+    // Find an active leave, but handle the case where none exist
+    Leave? activeLeave;
+    try {
+      activeLeave = leaveProvider.leaves.firstWhere(
+        (leave) => leave.isActive,
+      );
+    } catch (e) {
+      return const SizedBox.shrink();
+    }
+
+    if (activeLeave == null) {
+      return const SizedBox.shrink();
+    }
 
     IconData categoryIcon;
     MaterialColor categoryColor;

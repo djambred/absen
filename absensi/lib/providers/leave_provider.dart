@@ -15,6 +15,9 @@ class LeaveProvider with ChangeNotifier {
   
   int get remainingQuota => _currentQuota?.remainingQuota ?? 12;
   bool get hasActiveLeave => _activeLeave != null;
+  
+  // Check if user has any pending leave requests
+  bool get hasPendingLeave => _leaves.any((leave) => leave.status == 'pending');
 
   final _apiService = ApiService();
 

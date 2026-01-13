@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/attendance_provider.dart';
+import '../providers/leave_provider.dart';
 import 'home/home_screen.dart';
 import 'attendance/check_in_screen.dart';
 import 'profile/profile_screen.dart';
@@ -24,10 +25,23 @@ class _MainScreenState extends State<MainScreen> {
     if (index == 1) {
       // Check in/out button - show appropriate screen based on attendance status
       final attendanceProvider = context.read<AttendanceProvider>();
+      final leaveProvider = context.read<LeaveProvider>();
       final hasCheckedIn = attendanceProvider.hasCheckedIn;
       final hasCheckedOut = attendanceProvider.hasCheckedOut;
       final canCheckOutNow = attendanceProvider.canCheckOutNow;
       final requiredTime = attendanceProvider.requiredCheckoutTime;
+      
+      // Don't allow check-in if user has an active leave
+      if (leaveProvider.hasActiveLeave && !hasCheckedIn) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tidak bisa check-in karena Anda sedang cuti'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
       
       // Don't allow navigation if already checked out
       if (hasCheckedOut) {
@@ -77,9 +91,11 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final attendanceProvider = context.watch<AttendanceProvider>();
+    final leaveProvider = context.watch<LeaveProvider>();
     final hasCheckedIn = attendanceProvider.hasCheckedIn;
     final hasCheckedOut = attendanceProvider.hasCheckedOut;
     final canCheckOutNow = attendanceProvider.canCheckOutNow;
+    final hasActiveLeave = leaveProvider.hasActiveLeave;
 
     return Scaffold(
       body: IndexedStack(
@@ -97,17 +113,22 @@ class _MainScreenState extends State<MainScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              hasCheckedOut 
-                  ? Icons.check_circle
-                  : hasCheckedIn 
-                      ? (canCheckOutNow ? Icons.logout : Icons.access_time)
-                      : Icons.login,
+              hasActiveLeave && !hasCheckedIn
+                  ? Icons.block
+                  : hasCheckedOut 
+                      ? Icons.check_circle
+                      : hasCheckedIn 
+                          ? (canCheckOutNow ? Icons.logout : Icons.access_time)
+                          : Icons.login,
+              color: hasActiveLeave && !hasCheckedIn ? Colors.red : null,
             ),
-            label: hasCheckedOut 
-                ? 'Selesai' 
-                : hasCheckedIn 
-                    ? (canCheckOutNow ? 'Check Out' : 'Menunggu')
-                    : 'Check In',
+            label: hasActiveLeave && !hasCheckedIn
+                ? 'Sedang Cuti'
+                : hasCheckedOut 
+                    ? 'Selesai' 
+                    : hasCheckedIn 
+                        ? (canCheckOutNow ? 'Check Out' : 'Menunggu')
+                        : 'Check In',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.person),
