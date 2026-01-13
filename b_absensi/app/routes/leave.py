@@ -159,11 +159,12 @@ async def get_active_leaves(
     try:
         today = date.today()
         
-        # Get leaves that are approved and currently active (today is between start and end date)
+        # Get leaves that are approved (either by supervisor or HR) and currently active
+        # Status bisa: approved_by_supervisor atau approved_by_hr
         leaves = db.query(Leave).filter(
-            Leave.status == LeaveStatus.APPROVED,
-            Leave.start_date <= today,
-            Leave.end_date >= today
+            Leave.status.in_([LeaveStatus.APPROVED_BY_SUPERVISOR, LeaveStatus.APPROVED_BY_HR]),
+            Leave.start_date.cast(db.func.date()) <= today,
+            Leave.end_date.cast(db.func.date()) >= today
         ).order_by(Leave.start_date).all()
         
         result = []
@@ -186,8 +187,8 @@ async def get_active_leaves(
                 "user_department": user.department if user else "Unknown",
                 "leave_type": leave.leave_type,
                 "category": leave.category,
-                "start_date": leave.start_date.isoformat(),
-                "end_date": leave.end_date.isoformat(),
+                "start_date": leave.start_date.isoformat() if leave.start_date else None,
+                "end_date": leave.end_date.isoformat() if leave.end_date else None,
                 "total_days": leave.total_days,
                 "reason": leave.reason,
                 "status": leave.status,
