@@ -158,46 +158,51 @@ async def get_active_leaves(
     """Get all currently active leaves (approved leaves happening today)"""
     try:
         today = date.today()
+        tomorrow = date.fromordinal(today.toordinal() + 1)
         
-        # Get leaves that are approved (either by supervisor or HR) and currently active
-        # Status bisa: approved_by_supervisor atau approved_by_hr
+        # Get leaves that are approved and currently active
         leaves = db.query(Leave).filter(
             Leave.status.in_([LeaveStatus.APPROVED_BY_SUPERVISOR, LeaveStatus.APPROVED_BY_HR]),
-            Leave.start_date.cast(db.func.date()) <= today,
-            Leave.end_date.cast(db.func.date()) >= today
+            Leave.start_date < tomorrow,  # start_date is before tomorrow (i.e., today or earlier)
+            Leave.end_date >= tomorrow  # end_date is tomorrow or later (i.e., includes today)
         ).order_by(Leave.start_date).all()
         
         result = []
         for leave in leaves:
-            # Get user info
-            user = db.query(User).filter(User.id == leave.user_id).first()
-            
-            # Get approver info
-            approved_by_name = None
-            if leave.approved_by_level_1:
-                approver = db.query(User).filter(User.id == leave.approved_by_level_1).first()
-                if approver:
-                    approved_by_name = approver.name
-            
-            result.append({
-                "id": leave.id,
-                "user_id": leave.user_id,
-                "user_name": user.name if user else "Unknown",
-                "user_nip": user.nip if user else "Unknown",
-                "user_department": user.department if user else "Unknown",
-                "leave_type": leave.leave_type,
-                "category": leave.category,
-                "start_date": leave.start_date.isoformat() if leave.start_date else None,
-                "end_date": leave.end_date.isoformat() if leave.end_date else None,
-                "total_days": leave.total_days,
-                "reason": leave.reason,
-                "status": leave.status,
-                "approved_by_name": approved_by_name,
-                "approved_at": leave.approved_at_level_1.isoformat() if leave.approved_at_level_1 else None,
-            })
+            try:
+                # Get user info
+                user = db.query(User).filter(User.id == leave.user_id).first()
+                
+                # Get approver info
+                approved_by_name = None
+                if leave.approved_by_level_1:
+                    approver = db.query(User).filter(User.id == leave.approved_by_level_1).first()
+                    if approver:
+                        approved_by_name = approver.name
+                
+                result.append({
+                    "id": leave.id,
+                    "user_id": leave.user_id,
+                    "user_name": user.name if user else "Unknown",
+                    "user_nip": user.nip if user else "Unknown",
+                    "user_department": user.department if user else "Unknown",
+                    "leave_type": leave.leave_type,
+                    "category": leave.category,
+                    "start_date": leave.start_date.date().isoformat() if leave.start_date else None,
+                    "end_date": leave.end_date.date().isoformat() if leave.end_date else None,
+                    "total_days": leave.total_days,
+                    "reason": leave.reason,
+                    "status": leave.status,
+                    "approved_by_name": approved_by_name,
+                    "approved_at": leave.approved_at_level_1.isoformat() if leave.approved_at_level_1 else None,
+                })
+            except Exception as item_error:
+                print(f"Error processing leave {leave.id}: {item_error}")
+                continue
         
         return {"active_leaves": result}
     except Exception as e:
+        print(f"Error in get_active_leaves: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting active leaves: {str(e)}")
 
 
