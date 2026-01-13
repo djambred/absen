@@ -83,77 +83,77 @@ def create_positions():
 
 SAMPLE_USERS = [
     {
-        "email": "jefry.sunupurwa@mncu.ac.id",
+        "email": "jefry@mncu.ac.id",
         "password": "password",
-        "name": "Jefry",
-        "nip": "J001",
+        "name": "Jefry Sunupurwa Asri",
+        "nip": "D004",
         "department": "Fakultas Ilmu Komputer",
         "positions": ["DOSEN", "STAFF_IT"]  # Double job: Akademik (Dosen) + Non-Akademik (Staff IT)
     },
     {
-        "email": "eko.amri.jaya@mncu.ac.id",
-        "password": "password123",
-        "name": "Eko Amri Jaya",
-        "nip": "D001",
-        "department": "Fakultas Teknik",
+        "email": "dosen@mncu.ac.id",
+        "password": "password",
+        "name": "Sample Dosen",
+        "nip": "D002",
+        "department": "Fakultas Ilmu Komputer",
         "positions": ["DOSEN"]  # Akademik only
     },
     {
-        "email": "siti@mncu.ac.id",
-        "password": "password123",
-        "name": "Prof. Siti Nurhaliza",
-        "nip": "D002",
-        "department": "Fakultas Ekonomi",
+        "email": "eko@mncu.ac.id",
+        "password": "password",
+        "name": "Eko Amri Jaya",
+        "nip": "D003",
+        "department": "Fakultas Ilmu Komputer",
         "positions": ["KEPALA_PRODI"]  # Akademik - Kepala Prodi
     },
     {
         "email": "kepala.it@mncu.ac.id",
-        "password": "password123",
-        "name": "Andi Wijaya",
-        "nip": "K001",
+        "password": "password",
+        "name": "Head of IT",
+        "nip": "KIT001",
         "department": "IT Department",
         "positions": ["KEPALA_IT", "DOSEN"]  # Double job: Non-Akademik (Kepala IT) + Akademik (Dosen)
     },
     {
         "email": "hr@mncu.ac.id",
-        "password": "password123",
-        "name": "Dewi Lestari",
-        "nip": "H001",
+        "password": "password",
+        "name": "Farah",
+        "nip": "HR001",
         "department": "HR Department",
         "positions": ["KEPALA_HR"]  # Non-Akademik only
     },
     {
         "email": "staff.it@mncu.ac.id",
-        "password": "password123",
-        "name": "Budi Santoso",
-        "nip": "S001",
+        "password": "password",
+        "name": "Staff IT",
+        "nip": "SIT001",
         "department": "IT Department",
         "positions": ["STAFF_IT"]  # Non-Akademik only
     },
     {
         "email": "staff.hr@mncu.ac.id",
-        "password": "password123",
-        "name": "Linda Wijayanti",
-        "nip": "H002",
+        "password": "password",
+        "name": "Staff HR",
+        "nip": "HR002",
         "department": "HR Department",
         "positions": ["STAFF_HR"]  # Non-Akademik only
     },
     {
         "email": "dekan@mncu.ac.id",
-        "password": "password123",
-        "name": "Prof. Dr. Bambang Hermanto",
-        "nip": "D003",
-        "department": "Fakultas Teknik",
+        "password": "password",
+        "name": "Dekan Fakultas Ilmu Komputer",
+        "nip": "D001",
+        "department": "Fakultas Ilmu Komputer",
         "positions": ["DEKAN"]  # Akademik - Dekan
     },
-    {
-        "email": "admin@mncu.ac.id",
-        "password": "admin123",
-        "name": "Admin MNC",
-        "nip": "A001",
-        "department": "Administration",
-        "positions": ["STAFF_ADMIN"]  # Non-Akademik only
-    }
+    # {
+    #     "email": "admin@mncu.ac.id",
+    #     "password": "admin123",
+    #     "name": "Admin MNC",
+    #     "nip": "A001",
+    #     "department": "Administration",
+    #     "positions": ["STAFF_ADMIN"]  # Non-Akademik only
+    # }
 ]
 
 def create_sample_users():
