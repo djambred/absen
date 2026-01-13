@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class LeaveQuota {
   final String id;
   final String userId;
