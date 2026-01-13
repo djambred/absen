@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/leave_provider.dart';
+import '../../models/attendance_model.dart';
 
 // Marker model for calendar dots
 class _DayMarker {
@@ -47,12 +48,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (attendanceProvider.history.isEmpty) {
-            return const Center(
-              child: Text('Belum ada riwayat absensi'),
-            );
-          }
-
+          // Always show calendar, even if no history yet
           final filtered = _filterBySelectedDateOrMonth(attendanceProvider);
 
           return RefreshIndicator(
@@ -398,14 +394,61 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   // Kept for reference; use _filterBySelectedDateOrMonth instead
 
-  List<dynamic> _filterBySelectedDateOrMonth(AttendanceProvider provider) {
+  List<dynamic> _filterBySelectedDateOrMonth(AttendanceProvider attendanceProvider) {
+    final results = <dynamic>[];
+    
     if (_selectedDate != null) {
-      return provider.history.where((att) => _isSameDate(att.checkInTime, _selectedDate!)).toList();
+      // Filter attendance for selected date
+      final attendances = attendanceProvider.history
+          .where((att) => _isSameDate(att.checkInTime, _selectedDate!))
+          .toList();
+      results.addAll(attendances);
+      
+      // Filter leaves for selected date
+      final leaveProvider = context.read<LeaveProvider>();
+      final leaves = leaveProvider.leaves.where((leave) {
+        return !_selectedDate!.isBefore(leave.startDate) && !_selectedDate!.isAfter(leave.endDate);
+      }).toList();
+      results.addAll(leaves);
+    } else {
+      // Fallback: show entries for the focused month
+      final attendances = attendanceProvider.history
+          .where((att) => att.checkInTime.year == _focusedMonth.year && att.checkInTime.month == _focusedMonth.month)
+          .toList();
+      results.addAll(attendances);
+      
+      // Include leaves in focused month
+      final leaveProvider = context.read<LeaveProvider>();
+      final leaves = leaveProvider.leaves.where((leave) {
+        return (leave.startDate.year == _focusedMonth.year && leave.startDate.month == _focusedMonth.month) ||
+               (leave.endDate.year == _focusedMonth.year && leave.endDate.month == _focusedMonth.month) ||
+               (leave.startDate.isBefore(DateTime(_focusedMonth.year, _focusedMonth.month, 1)) &&
+                leave.endDate.isAfter(DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0)));
+      }).toList();
+      results.addAll(leaves);
     }
-    // Fallback: show entries for the focused month
-    return provider.history
-        .where((att) => att.checkInTime.year == _focusedMonth.year && att.checkInTime.month == _focusedMonth.month)
-        .toList();
+    
+    // Sort by date
+    results.sort((a, b) {
+      DateTime aDate;
+      DateTime bDate;
+      
+      if (a is Attendance) {
+        aDate = a.checkInTime;
+      } else {
+        aDate = a.startDate;
+      }
+      
+      if (b is Attendance) {
+        bDate = b.checkInTime;
+      } else {
+        bDate = b.startDate;
+      }
+      
+      return bDate.compareTo(aDate);
+    });
+    
+    return results;
   }
 
   bool _isSameDate(DateTime a, DateTime b) {
@@ -421,7 +464,15 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _buildAttendanceCard(attendance) {
+  Widget _buildAttendanceCard(dynamic item) {
+    if (item is Attendance) {
+      return _buildAttendanceDetailCard(item);
+    } else {
+      return _buildLeaveDetailCard(item);
+    }
+  }
+
+  Widget _buildAttendanceDetailCard(Attendance attendance) {
     final dateFormat = DateFormat('dd MMM yyyy');
     final timeFormat = DateFormat('HH:mm');
 
@@ -500,7 +551,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           ),
                         ),
                         Text(
-                          timeFormat.format(attendance.checkOutTime),
+                          attendance.checkOutTime != null ? timeFormat.format(attendance.checkOutTime!) : '--:--',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
@@ -532,4 +583,138 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       ),
     );
   }
-}
+
+  Widget _buildLeaveDetailCard(dynamic leave) {
+    final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
+    
+    // Determine leave type color and icon
+    Color typeColor;
+    IconData typeIcon;
+    String typeLabel;
+    
+    final leaveType = leave.leaveType?.toString().toLowerCase() ?? '';
+    
+    if (leaveType.contains('cuti')) {
+      typeColor = Colors.pink;
+      typeIcon = Icons.beach_access;
+      typeLabel = 'Cuti';
+    } else if (leaveType.contains('izin')) {
+      typeColor = Colors.blue;
+      typeIcon = Icons.assignment;
+      typeLabel = 'Izin';
+    } else {
+      // sakit
+      typeColor = Colors.yellow.shade700;
+      typeIcon = Icons.local_hospital;
+      typeLabel = 'Sakit';
+    }
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${dateFormat.format(leave.startDate)} - ${dateFormat.format(leave.endDate)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      '(${leave.totalDays} hari)',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+                Chip(
+                  label: Text(typeLabel),
+                  backgroundColor: typeColor.withOpacity(0.2),
+                  labelStyle: TextStyle(color: typeColor),
+                  avatar: Icon(typeIcon, color: typeColor, size: 18),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              children: [
+                Icon(typeIcon, size: 20, color: typeColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        leave.category?.toString() ?? 'Tidak ada kategori',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      Text(
+                        typeLabel,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (leave.reason != null && leave.reason!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Alasan',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  Text(
+                    leave.reason!,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Status: ${leave.status ?? "Pending"}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }}
