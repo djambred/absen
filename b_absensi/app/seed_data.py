@@ -83,7 +83,7 @@ def create_positions():
 
 SAMPLE_USERS = [
     {
-        "email": "jefry@mncu.ac.id",
+        "email": "jefry.sunupurwa@mncu.ac.id",
         "password": "password",
         "name": "Jefry",
         "nip": "J001",
@@ -91,9 +91,9 @@ SAMPLE_USERS = [
         "positions": ["DOSEN", "STAFF_IT"]  # Double job: Akademik (Dosen) + Non-Akademik (Staff IT)
     },
     {
-        "email": "ahmad@mncu.ac.id",
+        "email": "eko.amri.jaya@mncu.ac.id",
         "password": "password123",
-        "name": "Dr. Ahmad Suryadi",
+        "name": "Eko Amri Jaya",
         "nip": "D001",
         "department": "Fakultas Teknik",
         "positions": ["DOSEN"]  # Akademik only

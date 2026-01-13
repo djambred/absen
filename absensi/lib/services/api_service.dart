@@ -295,4 +295,43 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> getPendingApprovals() async {
+    try {
+      final response = await _dio.get('/leave/pending-approvals');
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      debugPrint('Get pending approvals error: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> approveLeave(String leaveId, {required int level, String? notes}) async {
+    try {
+      final response = await _dio.post(
+        '/leave/$leaveId/approve',
+        data: {
+          'level': level,
+          if (notes != null) 'notes': notes,
+        },
+      );
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      debugPrint('Approve leave error: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> rejectLeave(String leaveId, {required String notes}) async {
+    try {
+      final response = await _dio.post(
+        '/leave/$leaveId/reject',
+        data: {'notes': notes},
+      );
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      debugPrint('Reject leave error: $e');
+      rethrow;
+    }
+  }
 }

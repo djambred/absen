@@ -7,6 +7,7 @@ import '../../providers/leave_provider.dart';
 import '../../models/leave_model.dart';
 import '../history/attendance_history_screen.dart';
 import '../leave/leave_submission_screen.dart';
+import '../leave/leave_approval_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -88,6 +89,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // Sisa Cuti Card
             _buildLeaveQuotaCard(leaveProvider),
             const SizedBox(height: 16),
+            
+            // Approval Button (for supervisors)
+            _buildApprovalButton(context, user),
             
             // Active Leave Card (if any)
             _buildActiveLeaveCard(leaveProvider),
@@ -692,4 +696,42 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  Widget _buildApprovalButton(BuildContext context, user) {
+    // Show approval button for supervisors (kepala IT, kepala divisi, etc)
+    // Check if user has "kepala" in their role name
+    if (user?.role == null || !user.role.toLowerCase().contains('kepala')) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const LeaveApprovalScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.approval, size: 24),
+            label: const Text('Persetujuan Cuti/Izin'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.all(16),
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
 }
+

@@ -110,6 +110,46 @@ async def get_leaves(
         raise HTTPException(status_code=500, detail=f"Error getting leaves: {str(e)}")
 
 
+@router.get("/pending-approvals")
+async def get_pending_approvals(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all pending leave requests that require approval from current user"""
+    try:
+        # Get leaves where current user is the supervisor and status is pending
+        leaves = db.query(Leave).filter(
+            Leave.supervisor_id == current_user.id,
+            Leave.status == LeaveStatus.PENDING
+        ).order_by(Leave.created_at.desc()).all()
+        
+        result = []
+        for leave in leaves:
+            # Get submitter info
+            submitter = db.query(User).filter(User.id == leave.user_id).first()
+            
+            result.append({
+                "id": leave.id,
+                "user_id": leave.user_id,
+                "user_name": submitter.name if submitter else "Unknown",
+                "user_nip": submitter.nip if submitter else "Unknown",
+                "user_department": submitter.department if submitter else "Unknown",
+                "leave_type": leave.leave_type,
+                "category": leave.category,
+                "start_date": leave.start_date.isoformat(),
+                "end_date": leave.end_date.isoformat(),
+                "total_days": leave.total_days,
+                "reason": leave.reason,
+                "status": leave.status,
+                "attachment_url": leave.attachment_url,
+                "created_at": leave.created_at.isoformat(),
+            })
+        
+        return {"pending_approvals": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting pending approvals: {str(e)}")
+
+
 @router.post("/submit")
 async def submit_leave(
     type: str = Form(...),
