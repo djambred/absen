@@ -157,7 +157,6 @@ async def get_active_leaves(
 ):
     """Get all currently active leaves (approved leaves happening today)"""
     try:
-        from datetime import date
         today = date.today()
         
         # Get leaves that are approved and currently active (today is between start and end date)
