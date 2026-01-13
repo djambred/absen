@@ -550,7 +550,19 @@ class _HomeScreenState extends State<HomeScreen> {
     MaterialColor categoryColor;
     String categoryLabel;
 
-    if (activeLeave.leaveType == 'izin') {
+    if (activeLeave.leaveType == 'cuti') {
+      categoryIcon = Icons.beach_access;
+      categoryColor = Colors.pink;
+      categoryLabel = 'Cuti';
+    } else if (activeLeave.leaveType == 'sakit') {
+      categoryIcon = Icons.local_hospital;
+      categoryColor = Colors.red;
+      if (activeLeave.category == 'sakit_dengan_surat') {
+        categoryLabel = 'Sakit (dengan surat)';
+      } else {
+        categoryLabel = 'Sakit (tanpa surat)';
+      }
+    } else if (activeLeave.leaveType == 'izin') {
       if (activeLeave.category == 'dinas_luar') {
         categoryIcon = Icons.business_center;
         categoryColor = Colors.blue;

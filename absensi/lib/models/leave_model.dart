@@ -180,37 +180,43 @@ class Leave {
   });
 
   factory Leave.fromJson(Map<String, dynamic> json) {
-    return Leave(
-      id: json['id'] ?? '',
-      userId: json['user_id'] ?? '',
-      leaveType: json['leave_type'] ?? '',
-      category: json['category'] ?? '',
-      startDate: DateTime.parse(json['start_date']),
-      endDate: DateTime.parse(json['end_date']),
-      totalDays: json['total_days'] ?? 0,
-      reason: json['reason'] ?? '',
-      attachmentUrl: json['attachment_url'],
-      status: json['status'] ?? 'pending',
-      approvedByLevel1: json['approved_by_level_1'],
-      approvedAtLevel1: json['approved_at_level_1'] != null
-          ? DateTime.parse(json['approved_at_level_1'])
-          : null,
-      approvalNotesLevel1: json['approval_notes_level_1'],
-      approvedByLevel2: json['approved_by_level_2'],
-      approvedAtLevel2: json['approved_at_level_2'] != null
-          ? DateTime.parse(json['approved_at_level_2'])
-          : null,
-      approvalNotesLevel2: json['approval_notes_level_2'],
-      rejectedBy: json['rejected_by'],
-      rejectedAt: json['rejected_at'] != null
-          ? DateTime.parse(json['rejected_at'])
-          : null,
-      rejectionReason: json['rejection_reason'],
-      deductedFromQuota: json['deducted_from_quota'] ?? false,
-      quotaYear: json['quota_year'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-    );
+    try {
+      return Leave(
+        id: json['id'] ?? '',
+        userId: json['user_id'] ?? '',
+        leaveType: json['leave_type'] ?? '',
+        category: json['category'] ?? '',
+        startDate: json['start_date'] != null ? DateTime.parse(json['start_date']) : DateTime.now(),
+        endDate: json['end_date'] != null ? DateTime.parse(json['end_date']) : DateTime.now(),
+        totalDays: json['total_days'] ?? 0,
+        reason: json['reason'] ?? '',
+        attachmentUrl: json['attachment_url'],
+        status: json['status'] ?? 'pending',
+        approvedByLevel1: json['approved_by_level_1'],
+        approvedAtLevel1: json['approved_at_level_1'] != null
+            ? DateTime.parse(json['approved_at_level_1'])
+            : null,
+        approvalNotesLevel1: json['approval_notes_level_1'],
+        approvedByLevel2: json['approved_by_level_2'],
+        approvedAtLevel2: json['approved_at_level_2'] != null
+            ? DateTime.parse(json['approved_at_level_2'])
+            : null,
+        approvalNotesLevel2: json['approval_notes_level_2'],
+        rejectedBy: json['rejected_by'],
+        rejectedAt: json['rejected_at'] != null
+            ? DateTime.parse(json['rejected_at'])
+            : null,
+        rejectionReason: json['rejection_reason'],
+        deductedFromQuota: json['deducted_from_quota'] ?? false,
+        quotaYear: json['quota_year'],
+        createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+        updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('Error parsing Leave from JSON: $e');
+      debugPrint('JSON data: $json');
+      rethrow;
+    }
   }
 
   bool get isActive {
