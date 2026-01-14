@@ -42,9 +42,11 @@ class _TaskSubmissionScreenState extends State<TaskSubmissionScreen> {
   Future<void> _loadColleagues() async {
     setState(() => _isLoadingColleagues = true);
     try {
-      final response = await _apiService.getSupervisors();
+      final supervisorsList = await _apiService.getSupervisors();
       setState(() {
-        _colleagues = List<Map<String, dynamic>>.from(response['supervisors']);
+        _colleagues = List<Map<String, dynamic>>.from(
+          supervisorsList.map((e) => e as Map<String, dynamic>)
+        );
       });
     } catch (e) {
       if (mounted) {
@@ -145,7 +147,7 @@ class _TaskSubmissionScreenState extends State<TaskSubmissionScreen> {
                   const Text('Tugaskan ke', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: _selectedAssignee,
+                    initialValue: _selectedAssignee,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.person),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

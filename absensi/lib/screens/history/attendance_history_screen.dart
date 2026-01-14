@@ -640,7 +640,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 ),
                 Chip(
                   label: Text(typeLabel),
-                  backgroundColor: typeColor.withOpacity(0.2),
+                  backgroundColor: typeColor.withValues(alpha: 0.2),
                   labelStyle: TextStyle(color: typeColor),
                   avatar: Icon(typeIcon, color: typeColor, size: 18),
                 ),

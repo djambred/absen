@@ -8,6 +8,7 @@ from ..database import get_db
 from ..models.user import User
 from ..models.absensi import Task, TaskStatus
 from ..middleware.auth_middleware import get_current_user
+from ..services.notification_service import NotificationService
 
 router = APIRouter()
 
@@ -55,6 +56,9 @@ async def submit_task(
         db.add(task)
         db.commit()
         db.refresh(task)
+        
+        # Send notification
+        NotificationService.notify_task_assigned(db, task.id)
         
         return {
             "message": "Task submitted successfully",
@@ -164,6 +168,10 @@ async def update_task_status(
             task.completed_at = get_jakarta_time()
         
         db.commit()
+        
+        # Send notification if task is completed
+        if request.status == TaskStatus.COMPLETED:
+            NotificationService.notify_task_completed(db, task.id)
         
         return {"message": "Task status updated successfully"}
     except HTTPException:

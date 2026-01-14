@@ -57,13 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final leaveProvider = context.watch<LeaveProvider>();
     final user = authProvider.user;
 
-    // Check if user can apply for annual leave (worked for 1+ year)
-    // NOTE: This validation is disabled - users can apply CUTI immediately
-    final canApplyForCuti = true; // user != null && DateTime.now().difference(user.createdAt).inDays >= 365;
-    final monthsWorked = user != null 
-        ? (DateTime.now().difference(user.createdAt).inDays / 30).floor()
-        : 0;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Absensi MNC'),
@@ -633,19 +626,10 @@ class _HomeScreenState extends State<HomeScreen> {
       return const SizedBox.shrink();
     }
 
-    // Find an active leave, but handle the case where none exist
-    Leave? activeLeave;
-    try {
-      activeLeave = leaveProvider.leaves.firstWhere(
-        (leave) => leave.isActive,
-      );
-    } catch (e) {
-      return const SizedBox.shrink();
-    }
-
-    if (activeLeave == null) {
-      return const SizedBox.shrink();
-    }
+    // Find an active leave
+    final activeLeave = leaveProvider.leaves.firstWhere(
+      (leave) => leave.isActive,
+    );
 
     IconData categoryIcon;
     MaterialColor categoryColor;

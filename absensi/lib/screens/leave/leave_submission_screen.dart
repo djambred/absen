@@ -99,12 +99,6 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _reasonController.dispose();
-    super.dispose();
-  }
-
   List<LeaveCategory> _getAvailableCategories() {
     if (_selectedType == null) return [];
 

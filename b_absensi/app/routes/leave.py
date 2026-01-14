@@ -328,6 +328,9 @@ async def submit_leave(
         db.commit()
         db.refresh(new_leave)
         
+        # Send notification to supervisor about pending approval
+        NotificationService.notify_pending_approval(db, new_leave.id)
+        
         # Get holidays in the range for info
         holidays_in_range = HolidayService.get_holidays_for_range(start, end)
         
@@ -427,6 +430,9 @@ async def reject_leave(
         leave.rejection_reason = request.notes
         
         db.commit()
+        
+        # Send notification
+        NotificationService.notify_leave_rejected(db, leave.id, request.notes)
         
         return {"message": "Leave rejected", "quota_refunded": should_refund}
         
