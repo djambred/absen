@@ -25,15 +25,26 @@ def get_jakarta_time():
 
 def save_photo(file: UploadFile) -> str:
     """Save uploaded photo"""
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    ext = os.path.splitext(file.filename)[1]
-    filename = f"{uuid.uuid4()}{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    
-    with open(filepath, "wb") as f:
-        f.write(file.file.read())
-    
-    return filename
+    try:
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        ext = os.path.splitext(file.filename)[1]
+        filename = f"attendance_{uuid.uuid4()}{ext}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+        
+        # Read file content
+        content = file.file.read()
+        
+        # Write to disk
+        with open(filepath, "wb") as f:
+            f.write(content)
+        
+        # Reset file pointer
+        file.file.seek(0)
+        
+        return filename
+    except Exception as e:
+        print(f"Error saving photo: {e}")
+        raise Exception(f"Gagal menyimpan foto: {str(e)}")
 
 def calculate_required_checkout(check_in_time: datetime) -> datetime:
     """
@@ -130,61 +141,71 @@ async def check_out(
     db: Session = Depends(get_db)
 ):
     """Check out with GPS and photo"""
-    # Find today's attendance
-    today = date.today()
-    attendance = db.query(Attendance).filter(
-        and_(
-            Attendance.user_id == current_user.id,
-            func.date(Attendance.check_in_time) == today
-        )
-    ).first()
-    
-    if not attendance:
+    try:
+        # Find today's attendance
+        today = date.today()
+        attendance = db.query(Attendance).filter(
+            and_(
+                Attendance.user_id == current_user.id,
+                func.date(Attendance.check_in_time) == today
+            )
+        ).first()
+        
+        if not attendance:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Anda belum check-in hari ini"
+            )
+        
+        if attendance.check_out_time:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Anda sudah check-out hari ini"
+            )
+        
+        # Check if it's time to check out
+        now = get_jakarta_time()
+        if now < attendance.required_checkout_time:
+            diff = attendance.required_checkout_time - now
+            hours = int(diff.total_seconds() // 3600)
+            minutes = int((diff.total_seconds() % 3600) // 60)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Belum waktunya check-out. Anda bisa check-out dalam {hours} jam {minutes} menit"
+            )
+        
+        # Validate location
+        is_valid, location_name = LocationService.validate_location(latitude, longitude)
+        if not is_valid:
+            nearest = LocationService.get_nearest_location(latitude, longitude)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Lokasi Anda tidak valid untuk check-out. Lokasi terdekat: {nearest['name']} ({nearest['distance']} km)"
+            )
+        
+        # Save photo
+        photo_filename = save_photo(photo)
+        
+        # Update attendance
+        attendance.check_out_time = now
+        attendance.check_out_latitude = latitude
+        attendance.check_out_longitude = longitude
+        attendance.check_out_location = location_name
+        attendance.check_out_photo_url = photo_filename
+        
+        db.commit()
+        db.refresh(attendance)
+        
+        return AttendanceResponse.model_validate(attendance)
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Check-out error: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Anda belum check-in hari ini"
+            status_code=500,
+            detail=f"Gagal check-out: {str(e)}"
         )
-    
-    if attendance.check_out_time:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Anda sudah check-out hari ini"
-        )
-    
-    # Check if it's time to check out
-    now = get_jakarta_time()
-    if now < attendance.required_checkout_time:
-        diff = attendance.required_checkout_time - now
-        hours = int(diff.total_seconds() // 3600)
-        minutes = int((diff.total_seconds() % 3600) // 60)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Belum waktunya check-out. Anda bisa check-out dalam {hours} jam {minutes} menit"
-        )
-    
-    # Validate location
-    is_valid, location_name = LocationService.validate_location(latitude, longitude)
-    if not is_valid:
-        nearest = LocationService.get_nearest_location(latitude, longitude)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Lokasi Anda tidak valid untuk check-out. Lokasi terdekat: {nearest['name']} ({nearest['distance']} km)"
-        )
-    
-    # Save photo
-    photo_filename = save_photo(photo)
-    
-    # Update attendance
-    attendance.check_out_time = now
-    attendance.check_out_latitude = latitude
-    attendance.check_out_longitude = longitude
-    attendance.check_out_location = location_name
-    attendance.check_out_photo_url = photo_filename
-    
-    db.commit()
-    db.refresh(attendance)
-    
-    return AttendanceResponse.model_validate(attendance)
 
 @router.get("/today", response_model=Optional[AttendanceResponse])
 def get_today_attendance(

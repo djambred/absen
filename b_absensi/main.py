@@ -2,12 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import Base, engine
-from app.routes import auth, attendance, leave
+from app.routes import auth, attendance, leave, task
 from app.scheduler import start_scheduler, stop_scheduler
 from sqlalchemy import text
 
 # Import models to ensure they are registered with SQLAlchemy
-from app.models import User, Attendance, Leave, Position, LeaveQuota
+from app.models import User, Attendance, Leave, Position, LeaveQuota, Task
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -80,6 +80,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(attendance.router, prefix="/api/attendance", tags=["Attendance"])
 app.include_router(leave.router, prefix="/api/leave", tags=["Leave"])
+app.include_router(task.router, prefix="/api/tasks", tags=["Tasks"])
 
 @app.get("/")
 def read_root():

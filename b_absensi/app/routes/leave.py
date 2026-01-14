@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ..database import get_db
 from ..models.user import User
+from ..services.notification_service import NotificationService
 from ..models.absensi import Leave, LeaveQuota, LeaveType, LeaveCategory, LeaveStatus
 from ..services.leave_quota_service import LeaveQuotaService
 from ..services.holiday_service import HolidayService
@@ -55,12 +56,13 @@ async def get_supervisors(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get list of supervisors/managers for leave approval"""
+    """Get list of supervisors/managers for leave approval - filtered by same department"""
     try:
-        # Get all users who can be supervisors (kepala/manager roles)
+        # Get supervisors from the same department/faculty
         supervisors = db.query(User).filter(
             User.is_active == True,
             User.id != current_user.id,  # Exclude current user
+            User.department == current_user.department,  # Same department/faculty
         ).all()
         
         result = []
@@ -383,6 +385,9 @@ async def approve_leave(
             raise HTTPException(status_code=400, detail="Invalid approval level")
         
         db.commit()
+        
+        # Send notification
+        NotificationService.notify_leave_approved(db, leave.id)
         
         return {"message": f"Leave approved at level {request.level}"}
         

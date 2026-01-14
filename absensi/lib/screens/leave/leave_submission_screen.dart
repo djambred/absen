@@ -29,6 +29,8 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
   TimeOfDay? _endTime;
   File? _attachmentFile;
   String? _selectedSupervisor;
+  String? _selectedTaskAssignee;  // Who will handle tasks during leave
+  TextEditingController? _taskDescriptionController;
   List<Map<String, dynamic>> _supervisors = [];
   bool _isSubmitting = false;
   bool _isLoadingSupervisors = false;
@@ -39,12 +41,20 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
     _selectedType = widget.initialLeaveType;
     _startTime = const TimeOfDay(hour: 8, minute: 0);
     _endTime = const TimeOfDay(hour: 17, minute: 0);
+    _taskDescriptionController = TextEditingController();
     _loadSupervisors();
     
     // Set kategori default berdasarkan tipe yang dipilih
     if (_selectedType != null) {
       _setDefaultCategory();
     }
+  }
+  
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    _taskDescriptionController?.dispose();
+    super.dispose();
   }
   
   void _setDefaultCategory() {
@@ -635,6 +645,43 @@ class _LeaveSubmissionScreenState extends State<LeaveSubmissionScreen> {
                     onChanged: _supervisors.isEmpty ? null : (value) => setState(() => _selectedSupervisor = value),
                     validator: (value) => value == null ? 'Pilih atasan' : null,
                   ),
+            const SizedBox(height: 20),
+            const Text('Penugasan Saat Cuti (Opsional)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedTaskAssignee,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.assignment_ind),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                hintText: 'Siapa yang akan handle tugas',
+              ),
+              items: _supervisors.isEmpty
+                  ? [const DropdownMenuItem(value: null, child: Text('Tidak ada orang tersedia'))]
+                  : _supervisors.map((supervisor) {
+                      return DropdownMenuItem<String>(
+                        value: supervisor['id'],
+                        child: Text(
+                          '${supervisor['name']} (${supervisor['nip']})',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+              onChanged: (value) => setState(() => _selectedTaskAssignee = value),
+            ),
+            if (_selectedTaskAssignee != null) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _taskDescriptionController,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.description),
+                  hintText: 'Deskripsi tugas yang perlu ditangani',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+                maxLines: 3,
+              ),
+            ],
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _isSubmitting ? null : _submitLeave,

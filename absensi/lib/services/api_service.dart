@@ -344,4 +344,81 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> submitTask({
+    required String title,
+    required String assignedToId,
+    String? description,
+    String? dueDate,
+    String? priority,
+    String? notes,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/tasks/submit',
+        data: {
+          'title': title,
+          'assigned_to_id': assignedToId,
+          if (description != null) 'description': description,
+          if (dueDate != null) 'due_date': dueDate,
+          'priority': priority ?? 'normal',
+          if (notes != null) 'notes': notes,
+        },
+      );
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      debugPrint('Submit task error: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getTasksAssignedToMe() async {
+    try {
+      final response = await _dio.get('/tasks/assigned-to-me');
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      debugPrint('Get tasks assigned to me error: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getTasksAssignedByMe() async {
+    try {
+      final response = await _dio.get('/tasks/assigned-by-me');
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      debugPrint('Get tasks assigned by me error: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateTaskStatus(
+    String taskId, {
+    required String status,
+    String? completionNotes,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/tasks/$taskId/update-status',
+        data: {
+          'status': status,
+          if (completionNotes != null) 'completion_notes': completionNotes,
+        },
+      );
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      debugPrint('Update task status error: $e');
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> getTaskDetail(String taskId) async {
+    try {
+      final response = await _dio.get('/tasks/$taskId');
+      return Map<String, dynamic>.from(response.data);
+    } catch (e) {
+      debugPrint('Get task detail error: $e');
+      rethrow;
+    }
+  }
 }

@@ -86,6 +86,10 @@ class Leave(Base):
     # Supervisor assignment for approval workflow
     supervisor_id = Column(String(36), ForeignKey("users.id"), nullable=True)
     
+    # Task assignment - who will handle tasks during leave
+    assigned_to_id = Column(String(36), ForeignKey("users.id"), nullable=True)  # User assigned to handle tasks
+    task_description = Column(Text, nullable=True)  # Description of tasks to be handled
+    
     # Approval tracking
     approved_by_level_1 = Column(String(36), ForeignKey("users.id"), nullable=True)  # Supervisor
     approved_at_level_1 = Column(DateTime, nullable=True)
@@ -131,3 +135,46 @@ class LeaveQuota(Base):
         # Unique constraint: one quota record per user per year
         {'sqlite_autoincrement': True},
     )
+
+class TaskStatus(str, enum.Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class Task(Base):
+    """Task assignment - for submitting and tracking tasks"""
+    __tablename__ = "tasks"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    
+    # Task details
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    
+    # Assignment
+    assigned_by_id = Column(String(36), ForeignKey("users.id"), nullable=False)  # Who created the task
+    assigned_to_id = Column(String(36), ForeignKey("users.id"), nullable=False)  # Who should do it
+    
+    # Dates
+    due_date = Column(DateTime, nullable=True)
+    start_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
+    
+    # Status tracking
+    status = Column(String(50), default=TaskStatus.PENDING)
+    priority = Column(String(20), default="normal")  # low, normal, high, urgent
+    
+    # Notes
+    notes = Column(Text, nullable=True)
+    completion_notes = Column(Text, nullable=True)
+    
+    # Audit
+    created_at = Column(DateTime, default=get_jakarta_time)
+    updated_at = Column(DateTime, default=get_jakarta_time, onupdate=get_jakarta_time)
+    completed_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    assigned_by = relationship("User", foreign_keys=[assigned_by_id])
+    assigned_to = relationship("User", foreign_keys=[assigned_to_id])

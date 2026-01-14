@@ -10,6 +10,8 @@ import '../history/attendance_history_screen.dart';
 import '../leave/leave_submission_screen.dart';
 import '../leave/leave_approval_screen.dart';
 import '../leave/active_leaves_screen.dart';
+import '../task/task_submission_screen.dart';
+import '../task/task_management_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -178,6 +180,48 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.all(16),
                 foregroundColor: Colors.deepOrange,
               ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Task Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TaskSubmissionScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.assignment_outlined),
+                    label: const Text('Buat Tugas'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.indigo,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TaskManagementScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.task_alt),
+                    label: const Text('Manajemen Tugas'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.purple,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             
