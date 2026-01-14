@@ -32,11 +32,19 @@ services:
       dockerfile: Dockerfile
     container_name: absensi_api
     environment:
+      # Database connection for SQLAlchemy
       DATABASE_USER: ${DATABASE_USER:-absensi_user}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:-password}
       DATABASE_HOST: db
       DATABASE_PORT: 3306
       DATABASE_NAME: ${DATABASE_NAME:-absensi_db}
+      # Database connection for migration script
+      DB_USER: ${DATABASE_USER:-absensi_user}
+      DB_PASSWORD: ${DATABASE_PASSWORD:-password}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DATABASE_NAME:-absensi_db}
+      # App settings
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
       APP_HOST: 0.0.0.0
       APP_PORT: 8000

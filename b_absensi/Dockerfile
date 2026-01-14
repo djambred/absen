@@ -8,9 +8,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
-# Install system dependencies
+# Install system dependencies including MySQL client
 RUN apt-get update && apt-get install -y \
     gcc \
+    default-mysql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
@@ -27,7 +28,9 @@ COPY . .
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app && \
     mkdir -p /app/uploads/photos && \
-    chown -R appuser:appuser /app/uploads
+    chown -R appuser:appuser /app/uploads && \
+    chmod +x /app/run_migrations.sh && \
+    chmod +x /app/start.sh
 USER appuser
 
 # Expose port
@@ -37,5 +40,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8000/health')"
 
-# Run application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run application with migration
+CMD ["/app/start.sh"]
