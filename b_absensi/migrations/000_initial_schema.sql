@@ -6,7 +6,7 @@
 -- ====================================================================
 
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
-SET FOREIGN_KEY_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 
 -- ====================================================================
 -- POSITIONS TABLE
@@ -50,8 +50,8 @@ CREATE TABLE IF NOT EXISTS user_positions (
     user_id VARCHAR(36) NOT NULL,
     position_id VARCHAR(36) NOT NULL,
     PRIMARY KEY (user_id, position_id),
-    CONSTRAINT fk_user_positions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_user_positions_position FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE CASCADE
+    INDEX idx_user (user_id),
+    INDEX idx_position (position_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ====================================================================
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     is_auto_checkout BOOLEAN DEFAULT FALSE,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
-    CONSTRAINT fk_attendance_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
     INDEX idx_user_date (user_id, check_in_time),
     INDEX idx_check_in_time (check_in_time),
     INDEX idx_status (status)
@@ -90,8 +90,8 @@ CREATE TABLE IF NOT EXISTS leave_quota (
     remaining_quota INT DEFAULT 12,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
-    CONSTRAINT fk_leave_quota_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY unique_user_year (user_id, year),
+    INDEX idx_user_id (user_id),
     INDEX idx_user_year (user_id, year)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -125,12 +125,7 @@ CREATE TABLE IF NOT EXISTS leaves (
     task_description TEXT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
-    CONSTRAINT fk_leaves_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_leaves_supervisor FOREIGN KEY (supervisor_id) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_leaves_approved_by_1 FOREIGN KEY (approved_by_level_1) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_leaves_approved_by_2 FOREIGN KEY (approved_by_level_2) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_leaves_rejected_by FOREIGN KEY (rejected_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_leaves_assigned_to FOREIGN KEY (assigned_to_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_user_id (user_id),
     INDEX idx_user_date (user_id, start_date, end_date),
     INDEX idx_status (status),
     INDEX idx_supervisor (supervisor_id),
@@ -156,23 +151,169 @@ CREATE TABLE IF NOT EXISTS tasks (
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     completed_at DATETIME,
-    CONSTRAINT fk_tasks_assigned_by FOREIGN KEY (assigned_by_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_tasks_assigned_to FOREIGN KEY (assigned_to_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_tasks_assigned_to (assigned_to_id),
-    INDEX idx_tasks_assigned_by (assigned_by_id),
+    INDEX idx_assigned_by (assigned_by_id),
+    INDEX idx_assigned_to (assigned_to_id),
     INDEX idx_tasks_status (status),
     INDEX idx_tasks_due_date (due_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ====================================================================
+-- ADD FOREIGN KEY CONSTRAINTS (if not already exist)
+-- ====================================================================
+
+-- User positions foreign keys
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='user_positions' 
+     AND constraint_name='fk_user_positions_user') > 0,
+    'SELECT "FK fk_user_positions_user exists" as message',
+    'ALTER TABLE user_positions ADD CONSTRAINT fk_user_positions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='user_positions' 
+     AND constraint_name='fk_user_positions_position') > 0,
+    'SELECT "FK fk_user_positions_position exists" as message',
+    'ALTER TABLE user_positions ADD CONSTRAINT fk_user_positions_position FOREIGN KEY (position_id) REFERENCES positions(id) ON DELETE CASCADE'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Attendance foreign keys
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='attendance' 
+     AND constraint_name='fk_attendance_user') > 0,
+    'SELECT "FK fk_attendance_user exists" as message',
+    'ALTER TABLE attendance ADD CONSTRAINT fk_attendance_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Leave quota foreign keys
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='leave_quota' 
+     AND constraint_name='fk_leave_quota_user') > 0,
+    'SELECT "FK fk_leave_quota_user exists" as message',
+    'ALTER TABLE leave_quota ADD CONSTRAINT fk_leave_quota_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Leaves foreign keys
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='leaves' 
+     AND constraint_name='fk_leaves_user') > 0,
+    'SELECT "FK fk_leaves_user exists" as message',
+    'ALTER TABLE leaves ADD CONSTRAINT fk_leaves_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='leaves' 
+     AND constraint_name='fk_leaves_supervisor') > 0,
+    'SELECT "FK fk_leaves_supervisor exists" as message',
+    'ALTER TABLE leaves ADD CONSTRAINT fk_leaves_supervisor FOREIGN KEY (supervisor_id) REFERENCES users(id) ON DELETE SET NULL'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='leaves' 
+     AND constraint_name='fk_leaves_approved_by_1') > 0,
+    'SELECT "FK fk_leaves_approved_by_1 exists" as message',
+    'ALTER TABLE leaves ADD CONSTRAINT fk_leaves_approved_by_1 FOREIGN KEY (approved_by_level_1) REFERENCES users(id) ON DELETE SET NULL'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='leaves' 
+     AND constraint_name='fk_leaves_approved_by_2') > 0,
+    'SELECT "FK fk_leaves_approved_by_2 exists" as message',
+    'ALTER TABLE leaves ADD CONSTRAINT fk_leaves_approved_by_2 FOREIGN KEY (approved_by_level_2) REFERENCES users(id) ON DELETE SET NULL'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='leaves' 
+     AND constraint_name='fk_leaves_rejected_by') > 0,
+    'SELECT "FK fk_leaves_rejected_by exists" as message',
+    'ALTER TABLE leaves ADD CONSTRAINT fk_leaves_rejected_by FOREIGN KEY (rejected_by) REFERENCES users(id) ON DELETE SET NULL'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='leaves' 
+     AND constraint_name='fk_leaves_assigned_to') > 0,
+    'SELECT "FK fk_leaves_assigned_to exists" as message',
+    'ALTER TABLE leaves ADD CONSTRAINT fk_leaves_assigned_to FOREIGN KEY (assigned_to_id) REFERENCES users(id) ON DELETE SET NULL'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Tasks foreign keys
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='tasks' 
+     AND constraint_name='fk_tasks_assigned_by') > 0,
+    'SELECT "FK fk_tasks_assigned_by exists" as message',
+    'ALTER TABLE tasks ADD CONSTRAINT fk_tasks_assigned_by FOREIGN KEY (assigned_by_id) REFERENCES users(id) ON DELETE CASCADE'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @s = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS 
+     WHERE table_schema=DATABASE() 
+     AND table_name='tasks' 
+     AND constraint_name='fk_tasks_assigned_to') > 0,
+    'SELECT "FK fk_tasks_assigned_to exists" as message',
+    'ALTER TABLE tasks ADD CONSTRAINT fk_tasks_assigned_to FOREIGN KEY (assigned_to_id) REFERENCES users(id) ON DELETE CASCADE'
+));
+PREPARE stmt FROM @s;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- ====================================================================
 -- VERIFICATION
 -- ====================================================================
-SET FOREIGN_KEY_CHECKS=1;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET SQL_MODE=@OLD_SQL_MODE;
 
 SELECT 'Initial schema migration completed successfully!' as Status;
-SELECT TABLE_NAME, TABLE_ROWS, CREATE_TIME 
-FROM INFORMATION_SCHEMA.TABLES 
-WHERE TABLE_SCHEMA = DATABASE() 
-AND TABLE_NAME IN ('users', 'positions', 'user_positions', 'attendance', 'leaves', 'leave_quota', 'tasks')
-ORDER BY TABLE_NAME;
